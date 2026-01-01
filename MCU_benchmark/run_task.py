@@ -49,15 +49,25 @@ def get_video(commands, text, record_path):
     )
     state_in=model.initial_state(condition, 1)
 
-
     n = 2
     obs, info = env.reset()
+    
     for _ in range(n): 
-        memory = None
         for i in range(600):
+            image = torch.tensor(obs['image'], dtype=torch.uint8, device='cuda')
+            if image.dim() == 3:
+                image = image.unsqueeze(0).unsqueeze(0) 
+            elif image.dim() == 4:
+                image = image.unsqueeze(0)
             
-            action, state_in = model.get_steve_action(condition, obs, state_in, input_shape='*')
-            obs, reward, terminated, truncated, info = env.step(action)
+            action, state_in = model.get_action(
+                input={
+                    'image': image,
+                    'condition': condition
+                },
+                state_in=state_in
+            )
+            obs, reward, termisnated, truncated, info = env.step(action)
 
         obs, info = env.reset()
     env.close()
@@ -81,7 +91,7 @@ if __name__ == '__main__':
                 yaml_content = file.read()
             
             commands, text = extract_info(yaml_content, filename)
-            file_path = f"/nfs-shared-2/steve_{difficulty}/{text}"
+            file_path = f"./output/steve_{difficulty}/{text}"
 
             if os.path.exists(file_path):
                 print(f"File {file_path} exists")
