@@ -18,50 +18,7 @@ from messenger import Messenger
 from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, SpeedTestCallback, SummonMobsCallback, MaskActionsCallback, RewardsCallback, JudgeResetCallback, FastResetCallback
 
-
-def extract_info(yaml_content, filename):
-    lines = yaml_content.splitlines()
-    commands = []
-    text = ''
-
-    for line in lines:
-        if line.startswith('-'):
-            command = line.strip('- ').strip()
-            commands.append(command)
-        elif line.startswith('text:'):
-            text = line.strip('text: ').strip()
-
-    task_name = filename[:-5].replace('_', ' ')
-    return task_name, commands, text
-    
-def get_tasks(difficulty: str, task_names: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
-    # Resolve task configs directory relative to this file's project root
-    repo_root = Path(__file__).resolve().parents[1]
-    directory = repo_root / 'MCU_benchmark' / 'task_configs' / difficulty
-    if not directory.exists():
-        raise FileNotFoundError(f"Task configs directory not found: {directory}")
-    all_task_files = [p.name for p in directory.iterdir() if p.suffix == '.yaml']
-    
-    if task_names:
-        task_files = [f"{name}.yaml" for name in task_names if f"{name}.yaml" in all_task_files]
-        if len(task_files) == 0:
-            print("No matching task names found. Using all tasks.")
-            task_files = all_task_files
-    else: 
-        task_files = all_task_files
-        
-    if num_tasks:
-        task_files = task_files[:num_tasks]
-    
-    tasks = []
-    for filename in task_files:
-        file_path = directory / filename
-        with open(file_path, 'r', encoding='utf-8') as file:
-            yaml_content = file.read()
-        task_name, commands, text = extract_info(yaml_content, filename)
-        tasks.append((task_name, commands, text))
-    
-    return tasks
+from util import extract_info, get_tasks, fetch, assess_video, save_data_json, process_video, find_mp4_files
 
 
 class EvalRequest(BaseModel):
@@ -216,7 +173,6 @@ class Agent:
             ]
         )
         
-        
         def encode_image(image: np.ndarray, fmt: str = '.jpeg') -> str:
             success, buffer = cv2.imencode(fmt, image)
             if not success:
@@ -264,8 +220,9 @@ class Agent:
 
         return float(reward)
     
-    async def _run_video_eval(self):
-        pass
+    async def _run_video_eval(self, task: str, rule_file_path: str, record_path: str):
+        video_frames = process_video(record_path)
+        assess_video(task, rule_file_path, video_frames, record_path)
     
     def _parse_agent_response(self, response: str):
         """

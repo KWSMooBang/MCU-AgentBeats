@@ -10,12 +10,15 @@ dependencies = [
     "google-genai>=1.36.0",
     "litellm>=1.0.0",
     "loguru>=0.7.0",
-    "minestudio",
     "nest-asyncio>=1.6.0",
     "psutil>=7.2.1",
     "pydantic>=2.11.9",
     "python-dotenv>=1.1.1",
     "uvicorn>=0.35.0",
+    "psutil>=7.2.1",
+    "pyglet==1.4.0b1",
+    # MineStudio from github
+    "minestudio @ git+https://github.com/CraftJarvis/MineStudio.git"
 ]
 
 [project.optional-dependencies]

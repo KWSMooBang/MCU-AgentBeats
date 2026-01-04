@@ -1,25 +1,24 @@
-FROM continuumio/miniconda3:latest
+FROM eclipse-temurin:8-jdk-jammy AS jdk8
 
-# copy project files and requirements 
-COPY README.md requirements.txt ./
-COPY MCU_benchmark MCU_benchmark
-COPY green_agent/src src
+FROM ghcr.io/astral-sh/uv:python3.13-trixie
 
-# Create conda env as root, install packages, then clean caches
-RUN conda create -y -n mcu-agent python=3.11 pip \
- && conda install -y -n mcu-agent -c conda-forge openjdk=8 \
- && conda run -n mcu-agent pip install --no-cache-dir -r requirements.txt \
- && conda clean -afy
+ENV JAVA_HOME=/opt/java/openjdk
+COPY --from=jdk8 $JAVA_HOME $JAVA_HOME
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-# Create non-root user and set ownership of home and conda env
-RUN adduser --disabled-password --gecos "" agent \
- && mkdir -p /home/agent \
- && chown -R agent:agent /home/agent \
- && chown -R agent:agent /opt/conda/envs/mcu-agent
-
+RUN adduser agent
 USER agent
 WORKDIR /home/agent
 
-ENTRYPOINT ["conda", "run", "-n", "mcu-agent", "--no-capture-output", "python", "-u", "src/server.py"]
+COPY pyproject.toml uv.lock README.md ./
+COPY MCU_benchmark MCU_benchmark
+COPY green_agent/src src
+
+
+RUN \
+    --mount=type=cache,target=/home/agent/.cache/uv,uid=1000 \
+    uv sync --locked
+
+ENTRYPOINT ["uv", "run", "src/server.py"]
 CMD ["--host", "0.0.0.0"]
 EXPOSE 9019

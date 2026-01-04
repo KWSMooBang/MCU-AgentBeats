@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 
 .mp4
+
+# Ignore tutorial logs and outputs
+tutorial/logs/
+tutorial/output/
