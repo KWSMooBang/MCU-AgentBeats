@@ -7,6 +7,7 @@ This is the agent being tested. It:
 3. Returns responses in the expected JSON format wrapped in <json>...</json> tags
 """
 import argparse
+import sys
 import os
 import uvicorn
 import logging
@@ -96,7 +97,7 @@ class MCUAgentExecutor(AgentExecutor):
                     'text': text
                 }
             )
-            self.state_in = self.model.initial_state(self.condition, 1)
+            self.state_in = self.model.initial_state(1, self.condition)
             
             await event_queue.enqueue_event(
                 new_agent_text_message(

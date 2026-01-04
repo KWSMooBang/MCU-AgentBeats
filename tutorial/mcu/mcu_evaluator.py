@@ -10,7 +10,6 @@ This agent:
 
 import os
 import argparse
-import contextlib
 import uvicorn
 import asyncio
 import logging
@@ -163,7 +162,7 @@ class MCUEvaluator(GreenAgent):
         )
         
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_dir = f"./records/{difficulty}/{date_str}"
+        record_dir = f"./output/{difficulty}/{date_str}"
         os.makedirs(record_dir, exist_ok=True)
         metrics: dict[str, Any] = {"tasks": {}}
 
