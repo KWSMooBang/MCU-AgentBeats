@@ -30,6 +30,7 @@ class Agent:
     def __init__(self):
         self.messenger = Messenger()
         # Initialize other state here
+        self.root_dir = Path(__file__).resolve().parents[1]
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
@@ -40,7 +41,15 @@ class Agent:
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
 
-        # Add additional request validation here
+        # Validate difficulty
+        difficulty = request.config.get("difficulty")
+        if difficulty not in ['simple', 'hard']:
+            return False, f"Invalid difficulty: {difficulty}. Must be 'simple' or 'hard'"
+
+        # Validate video evaluation config if enabled
+        if request.config.get("enable_video_eval", False):
+            if "rule_file" not in request.config:
+                return False, "rule_file is required when enable_video_eval is True"
 
         return True, "ok"
 
@@ -64,22 +73,16 @@ class Agent:
         except ValidationError as e:
             await updater.reject(new_agent_text_message(f"Invalid request: {e}"))
             return
-
-        # Replace example code below with your agent logic
-        # Use request.participants to get participant agent URLs by role
-        # Use request.config for assessment parameters
         
         # Get the purple agent URL
         agent_url = str(request.participants["agent"])
         
         # Get config parameters
         difficulty = request.config["difficulty"]
-        if difficulty not in ['simple', 'hard']:
-            print("Invalid difficulty level. Please choose 'simple' or 'hard'.")
-            exit()
         task_names = request.config.get("task_names", None)
         num_tasks = request.config.get("num_tasks", None)
         max_steps = request.config.get("max_steps", 1000)
+        enable_video_eval = request.config.get("enable_video_eval", False)
         
         # Get tasks
         tasks = get_tasks(difficulty, task_names, num_tasks)
@@ -89,16 +92,18 @@ class Agent:
         )
         
         date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_path = f".output/{difficulty}/{date}"
-        os.makedirs(record_path, exist_ok=True)
-        metrics: dict[str, Any] = {"tasks": {}}
+        record_dir = self.root_dir / "record" / difficulty / date
+        os.makedirs(record_dir, exist_ok=True)
+        metrics: dict[str, dict[str, Any]] = {}
         
         try: 
-            for task_name, commands, text in tasks:
+            for task, commands, text in tasks:
                 await updater.update_status(
                     TaskState.working, 
-                    new_agent_text_message(f"Running task: {task_name}")
+                    new_agent_text_message(f"Running task: {task}")
                 )
+                
+                metrics[task] = {}
                 
                 try:
                     reward = await self._run_single_task(
@@ -106,22 +111,48 @@ class Agent:
                         commands,
                         text,
                         max_steps,
-                        record_path=os.path.join(record_path, task_name)
+                        record_path=os.path.join(record_dir, task)
                     )
-                    metrics["tasks"][task_name] = reward
+                    
+                    metrics[task]["reward"] = reward
+                    
+                    if enable_video_eval:
+                        criteria_dir = self.root_dir / "MCU_benchmark" / "auto_eval" / "criteria"
+                        rule_file_path = os.path.join(criteria_dir, f"{task.replace(' ', '_')}.txt")
+                        video_path = os.path.join(record_dir, f"{task}.mp4")
+                        
+                        video_score = await self._run_video_eval(
+                            task=task,
+                            rule_file_path=rule_file_path,
+                            video_path=video_path
+                        )
+                        metrics[task]["video_score"] = video_score
+                    else:
+                        metrics[task]["video_score"] = None
+                            
                 except Exception as e:
-                    metrics["tasks"][task_name] = None
+                    print(f"Error running task {task}: {e}")
+                    metrics["tasks"][task] = None
+                    if enable_video_eval:
+                        metrics["video_scores"][task] = None
         
-            total_reward = sum(metrics["tasks"].values())
-            num_completed = len(metrics["tasks"]) 
+            # Calculate metrics
+            task_rewards = [r for r in metrics["tasks"].values() if r is not None]
+            total_reward = sum(task_rewards)
+            num_completed = len(task_rewards)
             pass_rate = (total_reward / num_completed * 100) if num_completed > 0 else 0.0
             
             result = {
                 "difficulty": difficulty,
                 "score": total_reward,
                 "pass_rate": pass_rate,
+                "num_tasks": len(metrics["tasks"]),
+                "num_completed": num_completed,
                 "task_metrics": metrics["tasks"],
             }
+            
+            if enable_video_eval:
+                result["video_scores"] = metrics["video_scores"]
             
             task_result_str = "\n".join(
                 f"Task '{task_name}': {'✓' if reward == 1.0 else '✗'} ({reward})"
@@ -214,9 +245,14 @@ class Agent:
 
         return float(reward)
     
-    async def _run_video_eval(self, task: str, rule_file_path: str, record_path: str):
-        video_frames = process_video(record_path)
-        assess_video(task, rule_file_path, video_frames, record_path)
+    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict[str, Any]:
+        try:
+            video_frames = process_video(video_path)
+            result = assess_video(task, rule_file_path, video_frames, video_path)
+            return result
+        except Exception as e:
+            print(f"Video evaluation failed for {task}: {e}")
+            return {"error": str(e)}
     
     def _parse_agent_response(self, response: str):
         """
@@ -228,7 +264,8 @@ class Agent:
 
         try:
             data = json.loads(response)
-        except Exception:
+        except Exception as e:
+            print(f"Failed to parse agent response as JSON: {e}")
             return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
                 
                 
@@ -241,10 +278,10 @@ class Agent:
         camera = payload.get("camera")
 
         try:
-            buttons = np.array(buttons)
-            camera = np.array(camera)
-
+            buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.zeros(1, dtype=np.int32)
+            camera = np.array(camera, dtype=np.float32) if camera is not None else np.zeros(1, dtype=np.float32)
         except Exception as e:
+            print(f"Failed to convert action arrays: {e}")
             return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
 
         return {"buttons": buttons, "camera": camera}
