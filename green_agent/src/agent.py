@@ -3,28 +3,22 @@ import json
 import numpy as np
 import base64
 import cv2
-import torch
 
 from pathlib import Path
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, HttpUrl, ValidationError
+from pydantic import ValidationError
+
 from a2a.server.tasks import TaskUpdater
 from a2a.types import Message, TaskState, Part, TextPart, DataPart
 from a2a.utils import get_message_text, new_agent_text_message
 
-from messenger import Messenger
-
 from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, SpeedTestCallback, SummonMobsCallback, MaskActionsCallback, RewardsCallback, JudgeResetCallback, FastResetCallback
 
+from messenger import Messenger
+from model import EvalRequest
 from util import extract_info, get_tasks, fetch, assess_video, save_data_json, process_video, find_mp4_files
-
-
-class EvalRequest(BaseModel):
-    """Request format sent by the AgentBeats platform to green agents."""
-    participants: dict[str, HttpUrl] # role -> agent URL
-    config: dict[str, Any]
 
 
 class Agent:
