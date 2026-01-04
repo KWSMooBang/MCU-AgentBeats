@@ -1,0 +1,14 @@
+a2a-sdk
+google-adk
+google-genai
+litellm
+nest-asyncio
+psutil
+pydantic
+python-dotenv
+uvicorn
+minestudio
+
+pytest
+pytest-asyncio
+httpx

@@ -31,8 +31,6 @@ dev-dependencies = [
     "mypy>=1.18.1",
 ]
 
-[tool.uv.sources]
-minestudio = { git = "https://github.com/CraftJarvis/MineStudio.git" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["agentbeats"]
