@@ -17,7 +17,7 @@ from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, JudgeResetCallback
 
 from messenger import Messenger
-from model import EvalRequest, InitPayload, ObservationPayload, ActionPayload
+from model import EvalRequest, InitPayload, ObservationPayload, AckPayload, ActionPayload
 from util import get_tasks, assess_video, process_video
 
 
@@ -204,16 +204,17 @@ class Agent:
         reward = 0.0
         terminated = False
         
-        init_payload = InitPayload(text=text)
-        response = await self.messenger.talk_to_agent(
-            message=init_payload.model_dump_json(),
-            url=agent_url,
-            new_conversation=True,
-        )
-        
         try:
+            init_payload = InitPayload(text=text)
+            res = await self.messenger.talk_to_agent(
+                message=init_payload.model_dump_json(),
+                url=agent_url,
+                new_conversation=True,
+            )
+            action_payload = AckPayload.model_validate_json(res)
+            assert action_payload.success, f"Agent initialization failed: {action_payload.message}"
+            
             obs, info = env.reset()
-
             for step in range(max_steps):
                 obs_img = obs['image']
             
@@ -221,13 +222,13 @@ class Agent:
                     step=step,
                     obs=encode_image(obs_img)
                 )
-                response = await self.messenger.talk_to_agent(
+                res = await self.messenger.talk_to_agent(
                     message=obs_payload.model_dump_json(),
                     url=agent_url,
                     new_conversation=False,
                 )
                 
-                action = self._parse_agent_response(response)
+                action = self._parse_agent_response(res)
                 obs, reward, terminated, truncated, info = env.step(action)
                 if terminated:
                     break

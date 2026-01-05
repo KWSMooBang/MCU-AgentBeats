@@ -24,6 +24,7 @@ class ObservationPayload(BaseModel):
 class AckPayload(BaseModel):
     """Acknowledgment from purple agent."""
     type: Literal["ack"] = "ack"
+    success: bool = False
     message: str = ""
 
 class ActionPayload(BaseModel):
