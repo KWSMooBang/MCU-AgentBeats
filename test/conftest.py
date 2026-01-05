@@ -11,7 +11,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session")
-def agent(request):
+def agent_url(request):
     """Agent URL fixture. Agent must be running before tests start."""
     url = request.config.getoption("--agent-url")
 
