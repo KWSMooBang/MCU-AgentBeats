@@ -41,7 +41,7 @@ def get_tasks(difficulty: str, task_names: list[str]|None=None, num_tasks: int|N
     all_task_files = [p.name for p in task_dir.iterdir() if p.suffix == '.yaml']
     
     if task_names:
-        task_files = [f"{name}.yaml" for name in task_names if f"{name}.yaml" in all_task_files]
+        task_files = [f"{name.replace(' ', '_')}.yaml" for name in task_names if f"{name.replace(' ', '_')}.yaml" in all_task_files]
         if len(task_files) == 0:
             print("No matching task names found. Using all tasks.")
             task_files = all_task_files
@@ -188,7 +188,7 @@ def save_data_json(response: str, task: str, video_path: str) -> dict:
         difficulty = "unknown"
         date = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    result_dir = root_dir / "vlm_eval_result" / difficulty / date
+    result_dir = root_dir / "_eval_result" / difficulty / date
     result_dir.mkdir(parents=True, exist_ok=True)
     
     out_file = result_dir / f"{task.replace(' ', '_')}.json"

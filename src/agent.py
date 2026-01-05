@@ -17,7 +17,7 @@ from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, JudgeResetCallback
 
 from messenger import Messenger
-from model import EvalRequest
+from model import EvalRequest, InitPayload, ObservationPayload, ActionPayload
 from util import get_tasks, assess_video, process_video
 
 
@@ -45,11 +45,6 @@ class Agent:
         difficulty = request.config.get("difficulty")
         if difficulty not in ['simple', 'hard']:
             return False, f"Invalid difficulty: {difficulty}. Must be 'simple' or 'hard'"
-
-        # Validate video evaluation config if enabled
-        if request.config.get("enable_video_eval", False):
-            if "rule_file" not in request.config:
-                return False, "rule_file is required when enable_video_eval is True"
 
         return True, "ok"
 
@@ -209,12 +204,9 @@ class Agent:
         reward = 0.0
         terminated = False
         
-        payload = {
-            'type': 'init',
-            'text': text,
-        }
+        init_payload = InitPayload(text=text)
         response = await self.messenger.talk_to_agent(
-            message=json.dumps(payload),
+            message=init_payload.model_dump_json(),
             url=agent_url,
             new_conversation=True,
         )
@@ -225,13 +217,12 @@ class Agent:
             for step in range(max_steps):
                 obs_img = obs['image']
             
-                payload = {
-                    'type': 'obs',
-                    'step': step,
-                    'obs': encode_image(obs_img)
-                }
+                obs_payload = ObservationPayload(
+                    step=step,
+                    obs=encode_image(obs_img)
+                )
                 response = await self.messenger.talk_to_agent(
-                    message=json.dumps(payload),
+                    message=obs_payload.model_dump_json(),
                     url=agent_url,
                     new_conversation=False,
                 )
@@ -263,25 +254,23 @@ class Agent:
             return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
 
         try:
-            data = json.loads(response)
+            # Try to parse as ActionPayload
+            action_payload = ActionPayload.model_validate_json(response)
+            buttons = np.array(action_payload.buttons, dtype=np.int32)
+            camera = np.array(action_payload.camera, dtype=np.float32)
+            return {"buttons": buttons, "camera": camera}
         except Exception as e:
-            print(f"Failed to parse agent response as JSON: {e}")
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
+            print(f"Failed to parse agent response as ActionPayload: {e}")
+            
+            # Fallback: try to parse as generic JSON
+            try:
+                data = json.loads(response)
+                buttons = data.get("buttons")
+                camera = data.get("camera")
                 
-                
-        if isinstance(data, dict) and data.get("type") == "action":
-            payload = data
-        else:
-            payload = data
-
-        buttons = payload.get("buttons")
-        camera = payload.get("camera")
-
-        try:
-            buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.zeros(1, dtype=np.int32)
-            camera = np.array(camera, dtype=np.float32) if camera is not None else np.zeros(1, dtype=np.float32)
-        except Exception as e:
-            print(f"Failed to convert action arrays: {e}")
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
-
-        return {"buttons": buttons, "camera": camera}
+                buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.zeros(1, dtype=np.int32)
+                camera = np.array(camera, dtype=np.float32) if camera is not None else np.zeros(1, dtype=np.float32)
+                return {"buttons": buttons, "camera": camera}
+            except Exception as e2:
+                print(f"Failed to parse agent response as JSON: {e2}")
+                return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
