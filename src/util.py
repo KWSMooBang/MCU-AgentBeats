@@ -188,7 +188,7 @@ def save_data_json(response: str, task: str, video_path: str) -> dict:
         difficulty = "unknown"
         date = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    result_dir = root_dir / "video_eval_result" / difficulty / date
+    result_dir = root_dir / "vlm_eval_result" / difficulty / date
     result_dir.mkdir(parents=True, exist_ok=True)
     
     out_file = result_dir / f"{task.replace(' ', '_')}.json"
