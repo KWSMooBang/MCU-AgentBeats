@@ -147,7 +147,7 @@ class MCUEvaluator(GreenAgent):
             exit()
         task_names = req.config.get("task_names", None)
         num_tasks = req.config.get("num_tasks", None)
-        max_steps = req.config.get("max_steps", 1000)
+        max_steps = req.config.get("max_steps", 900)
         
         # Get the purple agent URL
         agent_url = str(req.participants["agent"])

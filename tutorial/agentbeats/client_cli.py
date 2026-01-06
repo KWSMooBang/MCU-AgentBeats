@@ -126,7 +126,7 @@ async def main():
                 print("Unhandled event")
 
     msg = req.model_dump_json()
-    await send_message(msg, green_url, streaming=True, consumer=event_consumer)
+    await send_message(msg, green_url, streaming=True, consumer=event_consumer, timeout=7200)
 
     if output_path:
         all_data_parts = []
