@@ -164,7 +164,7 @@ class MCUEvaluator(GreenAgent):
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         record_dir = f"./output/{difficulty}/{date_str}"
         os.makedirs(record_dir, exist_ok=True)
-        metrics: dict[str, Any] = {"tasks": {}}
+        metrics: dict = {}
 
         try:
             for (task_name, commands, text) in tasks:
@@ -182,15 +182,15 @@ class MCUEvaluator(GreenAgent):
                         max_steps=max_steps,
                         record_path=os.path.join(record_dir, task_name)
                     )
-                    metrics["tasks"][task_name] = reward
-                    logger.info(f"Task '{task_name}' completed with reward: {reward}")
+                    metrics[task_name] = reward
+                    logger.info(f"Task '{task_name}' ended with reward: {reward}")
                 except Exception as e:
                     logger.error(f"Task '{task_name}' failed: {e}")
                     metrics["tasks"][task_name] = None
             
             time_used = time.time() - start_time
-            total_reward = sum(metrics["tasks"].values())
-            num_completed = len(metrics["tasks"]) 
+            total_reward = sum(metrics.values())
+            num_completed = len(metrics) 
             pass_rate = (total_reward / num_completed * 100) if num_completed > 0 else 0.0
             
             result = {
@@ -203,7 +203,7 @@ class MCUEvaluator(GreenAgent):
             
             task_result_str = "\n".join(
                 f"Task '{task_name}': {'✓' if reward == 1.0 else '✗'} ({reward})"
-                for task_name, reward in metrics["tasks"].items()
+                for task_name, reward in metrics.items()
             )
             
             summary = f"""MCU Evaluation Result
@@ -214,6 +214,12 @@ Time Used: {time_used:.2f} seconds
 
 Task Results:
 {task_result_str}"""
+
+            # Save results to txt file
+            result_file = os.path.join(record_dir, "result.txt")
+            with open(result_file, 'w', encoding='utf-8') as f:
+                f.write(summary)
+            logger.info(f"Results saved to {result_file}")
 
             await updater.add_artifact(
                 parts=[
