@@ -77,7 +77,7 @@ class Agent:
         difficulty = request.config["difficulty"]
         task_list = request.config.get("task_list", None)
         num_tasks = request.config.get("num_tasks", None)
-        max_steps = request.config.get("max_steps", 1000)
+        max_steps = request.config.get("max_steps", 900)
         
         # Get tasks
         tasks = get_tasks(difficulty, task_list, num_tasks)
@@ -87,15 +87,15 @@ class Agent:
         )
         
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_dir = self.root_dir / "record" / difficulty / date_str
-        os.makedirs(record_dir, exist_ok=True)
+        output_dir = self.root_dir / "output" / date_str
+        os.makedirs(output_dir, exist_ok=True)
         metrics: dict = {}
         
         try: 
             for task, commands, text in tasks:
                 await updater.update_status(
                     TaskState.working, 
-                    new_agent_text_message(f"Running task: {task}")
+                    new_agent_text_message(f"Running task: {task.replace('_', ' ')}")
                 )
                 
                 metrics[task] = {}
@@ -106,13 +106,13 @@ class Agent:
                         commands,
                         text,
                         max_steps,
-                        record_path=os.path.join(record_dir, task.replace(' ', '_'))
+                        record_path=os.path.join(output_dir, task)
                     )
                     metrics[task]["reward"] = reward
                     
                     criteria_dir = self.root_dir / "MCU_benchmark" /"auto_eval" / "criteria_files"
-                    rule_file_path = os.path.join(criteria_dir, f"{task.replace(' ', '_')}.txt")
-                    video_path = os.path.join(record_dir, f"{task.replace(' ', '_')}.mp4")
+                    rule_file_path = os.path.join(criteria_dir, f"{task}.txt")
+                    video_path = os.path.join(output_dir, task, "episode_1.mp4")
                         
                     video_score = await self._run_video_eval(
                         task=task,
@@ -156,7 +156,7 @@ class Agent:
     {task_result_str}"""
     
             # Save results to txt file
-            result_file = os.path.join(record_dir, "result.txt")
+            result_file = os.path.join(output_dir, "result.txt")
             with open(result_file, 'w', encoding='utf-8') as f:
                 f.write(summary)
 
@@ -188,7 +188,6 @@ class Agent:
                 RecordCallback(record_path=record_path, fps=30, frame_type="pov"),
                 JudgeResetCallback(max_steps),
                 CommandsCallback(commands),
-                RewardsCallback(),
             ]
         )
         
@@ -230,6 +229,7 @@ class Agent:
                 action = self._parse_agent_response(res)
                 obs, reward, terminated, truncated, info = env.step(action)
                 total_reward += reward
+                
                 if terminated:
                     break
         finally:
