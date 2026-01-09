@@ -34,6 +34,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcu_agent")
 
 from minestudio.models.steve_one import SteveOnePolicy
+from model import InitPayload, ObservationPayload, AckPayload, ActionPayload, ErrorPayload
 
 
 def prepare_agent_card(url: str) -> AgentCard:
@@ -99,12 +100,10 @@ class MCUAgentExecutor(AgentExecutor):
             )
             self.state_in = self.model.initial_state(1, self.condition)
             
+            ack_payload = AckPayload(success=True, message="Initialization successful.")
             await event_queue.enqueue_event(
                 new_agent_text_message(
-                    json.dumps({
-                        "type": "init_ack",
-                        "message": "Initialization successful."
-                    }),
+                    ack_payload.model_dump_json(),
                     context_id=ctx_id,
                 )
             )
@@ -113,12 +112,11 @@ class MCUAgentExecutor(AgentExecutor):
             obs = payload.get("obs", None)
             if obs is None:
                 logger.error("No observation provided in 'obs' message.")
+                
+                error_payload = ErrorPayload(message="No observation provided.")
                 await event_queue.enqueue_event(
                     new_agent_text_message(
-                        json.dumps({
-                            "type": "error",
-                            "message": "No observation provided."
-                        }),
+                        error_payload.model_dump_json(),
                         context_id=ctx_id,
                     )
                 )
@@ -139,25 +137,24 @@ class MCUAgentExecutor(AgentExecutor):
                 state_in=self.state_in
             )
             
+            action_payload = ActionPayload(
+                buttons=action['buttons'].cpu().numpy().tolist(),
+                camera=action['camera'].cpu().numpy().tolist()
+            )
             await event_queue.enqueue_event(
                 new_agent_text_message(
-                    json.dumps({
-                        "type": "action",
-                        "buttons": action['buttons'].cpu().numpy().tolist(),
-                        "camera": action['camera'].cpu().numpy().tolist()
-                    }),
+                    action_payload.model_dump_json(),
                     context_id=ctx_id,
                 )
             )
             return 
         else: 
             logger.error(f"Unknown message type: {type}")
+            
+            error_payload = ErrorPayload(message=f"Unknown message type: {type}")
             await event_queue.enqueue_event(
                 new_agent_text_message(
-                    json.dumps({
-                        "type": "error",
-                        "message": f"Unknown message type: {type}"
-                    }),
+                    error_payload.model_dump_json(),
                     context_id=ctx_id,
                 )
             )

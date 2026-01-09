@@ -51,6 +51,9 @@ from agentbeats.tool_provider import ToolProvider
 from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, SpeedTestCallback, SummonMobsCallback, MaskActionsCallback, RewardsCallback, JudgeResetCallback, FastResetCallback
 
+from model import InitPayload, ObservationPayload, AckPayload, ActionPayload
+from util import get_tasks, assess_video, process_video
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcu_evaluator")
 
@@ -76,65 +79,28 @@ def create_agent_card(name: str, url: str) -> AgentCard:
     )
     
 
-def extract_info(yaml_content, filename):
-    lines = yaml_content.splitlines()
-    commands = []
-    text = ''
-
-    for line in lines:
-        if line.startswith('-'):
-            command = line.strip('- ').strip()
-            commands.append(command)
-        elif line.startswith('text:'):
-            text = line.strip('text: ').strip()
-
-    task_name = filename[:-5].replace('_', ' ')
-    return task_name, commands, text
-
-    
-def get_tasks(difficulty: str, task_names: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
-    # Resolve task configs directory relative to this file's project root
-    repo_root = Path(__file__).resolve().parents[2]
-    directory = repo_root / 'MCU_benchmark' / 'task_configs' / difficulty
-    if not directory.exists():
-        raise FileNotFoundError(f"Task configs directory not found: {directory}")
-    all_task_files = [p.name for p in directory.iterdir() if p.suffix == '.yaml']
-    
-    if task_names:
-        task_files = [f"{name}.yaml" for name in task_names if f"{name}.yaml" in all_task_files]
-        if len(task_files) == 0:
-            print("No matching task names found. Using all tasks.")
-            task_files = all_task_files
-    else: 
-        task_files = all_task_files
-        
-    if num_tasks:
-        task_files = task_files[:num_tasks]
-    
-    tasks = []
-    for filename in task_files:
-        file_path = directory / filename
-        with open(file_path, 'r', encoding='utf-8') as file:
-            yaml_content = file.read()
-        task_name, commands, text = extract_info(yaml_content, filename)
-        tasks.append((task_name, commands, text))
-    
-    return tasks
-
-
 class MCUEvaluator(GreenAgent):
     def __init__(self):
         self._required_roles = ["agent"]
         self._required_config_keys = ["difficulty"]
         self._tool_provider = ToolProvider()
         
+        self.root_dir = Path(__file__).resolve().parents[2]
+        
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self._required_roles) - set(request.participants.keys())
         if missing_roles:
             return False, f"Missing roles: {missing_roles}"
+
         missing_config_keys = set(self._required_config_keys) - set(request.config.keys())
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
+
+        # Validate difficulty
+        difficulty = request.config.get("difficulty")
+        if difficulty not in ['simple', 'hard']:
+            return False, f"Invalid difficulty: {difficulty}. Must be 'simple' or 'hard'"
+
         return True, "ok"
     
     async def run_eval(self, req: EvalRequest, updater: TaskUpdater) -> None:
@@ -145,7 +111,7 @@ class MCUEvaluator(GreenAgent):
         if difficulty not in ['simple', 'hard']:
             print("Invalid difficulty level. Please choose 'simple' or 'hard'.")
             exit()
-        task_names = req.config.get("task_names", None)
+        task_list = req.config.get("task_list", None)
         num_tasks = req.config.get("num_tasks", None)
         max_steps = req.config.get("max_steps", 900)
         
@@ -153,7 +119,7 @@ class MCUEvaluator(GreenAgent):
         agent_url = str(req.participants["agent"])
         
         # Get task
-        tasks = get_tasks(difficulty, task_names, num_tasks)
+        tasks = get_tasks(difficulty, task_list, num_tasks)
         logger.info(f"Running {len(tasks)} {difficulty} tasks")
         
         await updater.update_status(
@@ -162,17 +128,19 @@ class MCUEvaluator(GreenAgent):
         )
         
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_dir = f"./output/{difficulty}/{date_str}"
+        record_dir = f"./record/{difficulty}/{date_str}"
         os.makedirs(record_dir, exist_ok=True)
         metrics: dict = {}
 
         try:
-            for (task_name, commands, text) in tasks:
-                logger.info(f"Running task '{task_name}'...")
+            for (task, commands, text) in tasks:
+                logger.info(f"Running task '{task}'...")
                 await updater.update_status(
                     TaskState.working,
-                    new_agent_text_message(f"Running task '{task_name}'...")
+                    new_agent_text_message(f"Running task '{task}'...")
                 )
+                
+                metrics[task] = {}
                 
                 try:
                     reward = await self._run_single_task(
@@ -180,40 +148,63 @@ class MCUEvaluator(GreenAgent):
                         commands=commands,
                         text=text,
                         max_steps=max_steps,
-                        record_path=os.path.join(record_dir, task_name)
+                        record_path=os.path.join(record_dir, task.replace(' ', '_'))
                     )
-                    metrics[task_name] = reward
-                    logger.info(f"Task '{task_name}' ended with reward: {reward}")
+                    metrics[task]["reward"] = reward
+                    
+                    criteria_dir = self.root_dir / "MCU_benchmark" / "auto_eval" / "criteria_files"
+                    rule_file_path = os.path.join(criteria_dir, f"{task.replace(' ', '_')}.txt")
+                    video_path = os.path.join(record_dir, f"{task.replace(' ', '_')}", "episode_1.mp4")
+                    
+                    video_score = await self._run_video_eval(
+                        task=task,
+                        rule_file_path=rule_file_path,
+                        video_path=video_path
+                    )
+                    metrics[task]["video_score"] = video_score
+                    
+                    logger.info(f"Task '{task}' ended with reward: {reward}")
                 except Exception as e:
-                    logger.error(f"Task '{task_name}' failed: {e}")
-                    metrics["tasks"][task_name] = None
-            
-            time_used = time.time() - start_time
-            total_reward = sum(metrics.values())
-            num_completed = len(metrics) 
+                    logger.error(f"Task '{task}' failed: {e}")
+                    metrics[task]["reward"] = None
+                    metrics[task]["video_score"] = None
+                
+            task_rewards = [m["reward"] for m in metrics.values() if m.get("reward") is not None]
+            total_reward = sum(task_rewards)
+            num_completed = len(task_rewards)
             pass_rate = (total_reward / num_completed * 100) if num_completed > 0 else 0.0
             
             result = {
                 "difficulty": difficulty,
                 "score": total_reward,
                 "pass_rate": pass_rate,
-                "task_metrics": metrics["tasks"],
-                "time_used": time_used,
+                "num_tasks": len(metrics),
+                "num_completed": num_completed,
+                "task_metrics": {task: m["reward"] for task, m in metrics.items()},
             }
             
+            result["video_scores"] = {task: m.get("video_score") for task, m in metrics.items()}
+            
             task_result_str = "\n".join(
-                f"Task '{task_name}': {'✓' if reward == 1.0 else '✗'} ({reward})"
-                for task_name, reward in metrics.items()
+                f"Task '{task_name}': {'✓' if m['reward'] == 1.0 else '✗'} ({m['reward']})"
+                for task_name, m in metrics.items()
             )
             
             summary = f"""MCU Evaluation Result
-Difficulty: {difficulty}
-Tasks: {num_completed}
-Pass Rate: {pass_rate:.2f}% ({int(total_reward)}/{num_completed})
-Time Used: {time_used:.2f} seconds
+    Difficulty: {difficulty}
+    Tasks: {num_completed}
+    Pass Rate: {pass_rate:.2f}% ({int(total_reward)}/{num_completed})
 
-Task Results:
-{task_result_str}"""
+    Task Results:
+    {task_result_str}"""
+
+            await updater.add_artifact(
+                parts=[
+                    Part(root=TextPart(text=summary)),
+                    Part(root=DataPart(data=result))
+                ],
+                name="Result"
+            )
 
             # Save results to txt file
             result_file = os.path.join(record_dir, "result.txt")
@@ -259,46 +250,53 @@ Task Results:
             enc_image = base64.b64encode(buffer).decode("utf-8")
             return enc_image
 
-        reward = 0.0
+        total_reward = 0.0
         terminated = False
         
-        payload = {
-            'type': 'init',
-            'text': text,
-        }
-        response = await self._tool_provider.talk_to_agent(
-            message=json.dumps(payload),
-            url=agent_url,
-            new_conversation=True,
-        )
-        logger.info(f"Sent init message to agent, received response: {response}")
-        
         try:
+            init_payload = InitPayload(text=text)
+            res = await self._tool_provider.talk_to_agent(
+                message=init_payload.model_dump_json(),
+                url=agent_url,
+                new_conversation=True,
+            )
+            ack_payload = AckPayload.model_validate_json(res)
+            logger.info(f"Sent init message to agent, received response: {ack_payload}")
+            
             obs, info = env.reset()
 
             for step in range(max_steps):
                 obs_img = obs['image']
             
-                payload = {
-                    'type': 'obs',
-                    'step': step,
-                    'obs': encode_image(obs_img)
-                }
-                response = await self._tool_provider.talk_to_agent(
-                    message=json.dumps(payload),
+                obs_payload = ObservationPayload(
+                    step=step,
+                    obs=encode_image(obs_img)
+                )
+                res = await self._tool_provider.talk_to_agent(
+                    message=obs_payload.model_dump_json(),
                     url=agent_url,
                     new_conversation=False,
                 )
                 
-                action = self._parse_agent_response(response)
+                action = self._parse_agent_response(res)
                 obs, reward, terminated, truncated, info = env.step(action)
+                total_reward += reward
+                
                 if terminated:
                     break
         finally:
             env.close()
 
-        return float(reward)
-
+        return total_reward
+    
+    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict[str, Any]:
+        try:
+            video_frames = process_video(video_path)
+            result = assess_video(task, rule_file_path, video_frames, video_path)
+            return result
+        except Exception as e:
+            print(f"Video evaluation failed for {task}: {e}")
+            return {"error": str(e)}
 
     def _parse_agent_response(self, response: str):
         """
@@ -306,37 +304,34 @@ Task Results:
         """
 
         if not response:
-            logger.warning("Empty response from agent; returning no-op action.")
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
+            return {
+                "buttons": np.array([0]),
+                "camera": np.array([60]),
+            }
 
         try:
-            data = json.loads(response)
-        except Exception:
-            logger.warning("No JSON found in agent response; returning no-op action.")
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
-                
-                
-        if isinstance(data, dict) and data.get("type") == "action":
-            payload = data
-        else:
-            payload = data
-
-        buttons = payload.get("buttons")
-        camera = payload.get("camera")
-
-        try:
-            buttons = np.array(buttons)
-            camera = np.array(camera)
-
+            action_payload = ActionPayload.model_validate_json(response)
+            buttons = np.array(action_payload.buttons, dtype=np.int32)
+            camera = np.array(action_payload.camera, dtype=np.int32)
+            return {"buttons": buttons, "camera": camera}
         except Exception as e:
-            logger.warning(f"Failed to convert action arrays: {e}; returning no-op action.")
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
-
-        return {"buttons": buttons, "camera": camera}
-
-
-    def _run_video_eval(self):
-        pass
+            print(f"Failed to parse agent response as ActionPayload: {e}")
+            
+            try:
+                data = json.loads(response)
+                buttons = data.get("buttons")
+                camera = data.get("camera")
+                
+                buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.array([0])
+                camera = np.array(camera, dtype=np.int32) if camera is not None else np.array([60])
+                return {"buttons": buttons, "camera": camera}
+            except Exception as e2:
+                print(f"Failed to parse agent response as JSON: {e2}")
+                return {
+                    "buttons": np.array([0]),
+                    "camera": np.array([60]),
+                }
+                
     
 async def main():
     parser = argparse.ArgumentParser(description="Run the A2A MCU Evaluate")

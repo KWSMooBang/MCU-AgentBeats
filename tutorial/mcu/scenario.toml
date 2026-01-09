@@ -9,3 +9,4 @@ cmd = "python mcu/mcu_agent.py --host 127.0.0.1 --port 9019"
 
 [config]
 difficulty = "simple"
+task_list = ["look at the sky"]
