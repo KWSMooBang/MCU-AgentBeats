@@ -1,0 +1,10 @@
+[green_agent]
+endpoint = "http://127.0.0.1:9009"
+
+[[participants]]
+role = "agent"
+endpoint = "http://host.docker.internal:9019"
+
+[config]
+difficulty = "simple"
+task_list = ["look at the sky"]
