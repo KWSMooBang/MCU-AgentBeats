@@ -30,5 +30,5 @@ class AckPayload(BaseModel):
 class ActionPayload(BaseModel):
     """Action response from purple agent."""
     type: Literal["action"] = "action"
-    buttons: list[int] = Field(..., description="Button states")
-    camera: list[float] = Field(..., description="Camera movements")
+    buttons: list = Field(..., description="Button states")
+    camera: list = Field(..., description="Camera movements")

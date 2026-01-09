@@ -1,21 +1,13 @@
 import cv2  
 import base64
-import time
 from openai import OpenAI
 import os
-import requests
-import shutil
-from PIL import Image
-from io import BytesIO
 import json
-import datetime
-import openai
-import requests
-import argparse
 
+from datetime import datetime
 from pathlib import Path
-root_dir = Path(__file__).resolve().parents[1]
 
+root_dir = Path(__file__).resolve().parents[1]
 
 def extract_info(yaml_content, filename):
     lines = yaml_content.splitlines()
@@ -32,16 +24,15 @@ def extract_info(yaml_content, filename):
     task_name = filename[:-5].replace('_', ' ')
     return task_name, commands, text
 
-
-def get_tasks(difficulty: str, task_names: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
+def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
     # Resolve task configs directory relative to this file's project root
     task_dir = root_dir / 'MCU_benchmark' / 'task_configs' / difficulty
     if not task_dir.exists():
         raise FileNotFoundError(f"Task configs directory not found: {task_dir}")
     all_task_files = [p.name for p in task_dir.iterdir() if p.suffix == '.yaml']
     
-    if task_names:
-        task_files = [f"{name.replace(' ', '_')}.yaml" for name in task_names if f"{name.replace(' ', '_')}.yaml" in all_task_files]
+    if task_list:
+        task_files = [f"{task.replace(' ', '_')}.yaml" for task in task_list if f"{task.replace(' ', '_')}.yaml" in all_task_files]
         if len(task_files) == 0:
             print("No matching task names found. Using all tasks.")
             task_files = all_task_files
@@ -61,7 +52,6 @@ def get_tasks(difficulty: str, task_names: list[str]|None=None, num_tasks: int|N
     
     return tasks
 
-
 def fetch(query, model='gpt-4o'): # gpt4
     print(f'fetching {model} ...')
     api_key = os.getenv('OPENAI_API_KEY')
@@ -75,7 +65,6 @@ def fetch(query, model='gpt-4o'): # gpt4
     )
     res = completion.choices[0].message.content
     return res
-
 
 def process_video(video_path: str) -> list[str]:
     """Extract frames from video and encode as base64.
@@ -110,7 +99,6 @@ def process_video(video_path: str) -> list[str]:
         
     return base64Frames1
 
-
 def assess_video(task, rule_file, frames, video_path):
     prompt_dir = root_dir / 'MCU_benchmark' / 'auto_eval' / 'prompt'
     prompt_file = prompt_dir / 'single_rating_prompt.txt'
@@ -134,8 +122,8 @@ def assess_video(task, rule_file, frames, video_path):
         {
         "role": "user", "content":  
         f'The task name is ' + task + ' '
-        + f'You should follow the following grading criteria to compare the performance of agents in videos A and B' + grading_rule +'\n'
-        + f'Here are the image frames of the video A '
+        + f'You should follow the following grading criteria to score the performance of agents in videos' + grading_rule +'\n'
+        + f'Here are the image frames of the video '
         }]
 
     query.append(

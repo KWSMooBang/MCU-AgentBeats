@@ -14,7 +14,7 @@ from a2a.types import Message, TaskState, Part, TextPart, DataPart
 from a2a.utils import get_message_text, new_agent_text_message
 
 from minestudio.simulator import MinecraftSim
-from minestudio.simulator.callbacks import CommandsCallback, RecordCallback, JudgeResetCallback
+from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback
 
 from messenger import Messenger
 from model import EvalRequest, InitPayload, ObservationPayload, AckPayload, ActionPayload
@@ -31,6 +31,7 @@ class Agent:
         self.messenger = Messenger()
         # Initialize other state here
         self.root_dir = Path(__file__).resolve().parents[1]
+        
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
@@ -74,22 +75,21 @@ class Agent:
         
         # Get config parameters
         difficulty = request.config["difficulty"]
-        task_names = request.config.get("task_names", None)
+        task_list = request.config.get("task_list", None)
         num_tasks = request.config.get("num_tasks", None)
         max_steps = request.config.get("max_steps", 1000)
-        enable_video_eval = request.config.get("enable_video_eval", False)
         
         # Get tasks
-        tasks = get_tasks(difficulty, task_names, num_tasks)
+        tasks = get_tasks(difficulty, task_list, num_tasks)
         await updater.update_status(
             TaskState.working, 
             new_agent_text_message(f"Starting MCU evaluation with {len(tasks)} {difficulty} tasks")
         )
         
-        date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        record_dir = self.root_dir / "record" / difficulty / date
+        date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        record_dir = self.root_dir / "record" / difficulty / date_str
         os.makedirs(record_dir, exist_ok=True)
-        metrics: dict[str, dict[str, Any]] = {}
+        metrics: dict = {}
         
         try: 
             for task, commands, text in tasks:
@@ -106,33 +106,28 @@ class Agent:
                         commands,
                         text,
                         max_steps,
-                        record_path=os.path.join(record_dir, task)
+                        record_path=os.path.join(record_dir, task.replace(' ', '_'))
                     )
-                    
                     metrics[task]["reward"] = reward
                     
-                    if enable_video_eval:
-                        criteria_dir = self.root_dir / "MCU_benchmark" / "auto_eval" / "criteria"
-                        rule_file_path = os.path.join(criteria_dir, f"{task.replace(' ', '_')}.txt")
-                        video_path = os.path.join(record_dir, f"{task}.mp4")
+                    criteria_dir = self.root_dir / "MCU_benchmark" /"auto_eval" / "criteria_files"
+                    rule_file_path = os.path.join(criteria_dir, f"{task.replace(' ', '_')}.txt")
+                    video_path = os.path.join(record_dir, f"{task.replace(' ', '_')}.mp4")
                         
-                        video_score = await self._run_video_eval(
-                            task=task,
-                            rule_file_path=rule_file_path,
-                            video_path=video_path
-                        )
-                        metrics[task]["video_score"] = video_score
-                    else:
-                        metrics[task]["video_score"] = None
+                    video_score = await self._run_video_eval(
+                        task=task,
+                        rule_file_path=rule_file_path,
+                        video_path=video_path
+                    )
+                    metrics[task]["video_score"] = video_score
                             
                 except Exception as e:
                     print(f"Error running task {task}: {e}")
-                    metrics["tasks"][task] = None
-                    if enable_video_eval:
-                        metrics["video_scores"][task] = None
+                    metrics[task]["reward"] = None
+                    metrics[task]["video_score"] = None
         
             # Calculate metrics
-            task_rewards = [r for r in metrics["tasks"].values() if r is not None]
+            task_rewards = [m["reward"] for m in metrics.values() if m.get("reward") is not None]
             total_reward = sum(task_rewards)
             num_completed = len(task_rewards)
             pass_rate = (total_reward / num_completed * 100) if num_completed > 0 else 0.0
@@ -141,17 +136,15 @@ class Agent:
                 "difficulty": difficulty,
                 "score": total_reward,
                 "pass_rate": pass_rate,
-                "num_tasks": len(metrics["tasks"]),
+                "num_tasks": len(metrics),
                 "num_completed": num_completed,
-                "task_metrics": metrics["tasks"],
+                "task_metrics": {task: m["reward"] for task, m in metrics.items()},
+                "video_scores": {task: m.get("video_score") for task, m in metrics.items()}
             }
             
-            if enable_video_eval:
-                result["video_scores"] = metrics["video_scores"]
-            
             task_result_str = "\n".join(
-                f"Task '{task_name}': {'✓' if reward == 1.0 else '✗'} ({reward})"
-                for task_name, reward in metrics["tasks"].items()
+                f"Task '{task_name}': {'✓' if m['reward'] == 1.0 else '✗'} ({m['reward']})"
+                for task_name, m in metrics.items()
             )
             
             summary = f"""MCU Evaluation Result
@@ -161,6 +154,11 @@ class Agent:
 
     Task Results:
     {task_result_str}"""
+    
+            # Save results to txt file
+            result_file = os.path.join(record_dir, "result.txt")
+            with open(result_file, 'w', encoding='utf-8') as f:
+                f.write(summary)
 
             await updater.add_artifact(
                 parts=[
@@ -187,9 +185,10 @@ class Agent:
         env = MinecraftSim(
             obs_size=(128, 128),
             callbacks=[
-                CommandsCallback(commands),
-                JudgeResetCallback(max_steps),
                 RecordCallback(record_path=record_path, fps=30, frame_type="pov"),
+                JudgeResetCallback(max_steps),
+                CommandsCallback(commands),
+                RewardsCallback(),
             ]
         )
         
@@ -201,7 +200,7 @@ class Agent:
             enc_image = base64.b64encode(buffer).decode("utf-8")
             return enc_image
         
-        reward = 0.0
+        total_reward = 0.0
         terminated = False
         
         try:
@@ -230,12 +229,13 @@ class Agent:
                 
                 action = self._parse_agent_response(res)
                 obs, reward, terminated, truncated, info = env.step(action)
+                total_reward += reward
                 if terminated:
                     break
         finally:
             env.close()
 
-        return float(reward)
+        return total_reward
     
     async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict[str, Any]:
         try:
@@ -252,26 +252,30 @@ class Agent:
         """
 
         if not response:
-            return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
+            return {
+                "buttons": np.array([0]),
+                "camera": np.array([60]),
+            }
 
         try:
-            # Try to parse as ActionPayload
             action_payload = ActionPayload.model_validate_json(response)
             buttons = np.array(action_payload.buttons, dtype=np.int32)
-            camera = np.array(action_payload.camera, dtype=np.float32)
+            camera = np.array(action_payload.camera, dtype=np.int32)
             return {"buttons": buttons, "camera": camera}
         except Exception as e:
             print(f"Failed to parse agent response as ActionPayload: {e}")
             
-            # Fallback: try to parse as generic JSON
             try:
                 data = json.loads(response)
                 buttons = data.get("buttons")
                 camera = data.get("camera")
                 
-                buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.zeros(1, dtype=np.int32)
-                camera = np.array(camera, dtype=np.float32) if camera is not None else np.zeros(1, dtype=np.float32)
+                buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.array([0])
+                camera = np.array(camera, dtype=np.int32) if camera is not None else np.array([60])
                 return {"buttons": buttons, "camera": camera}
             except Exception as e2:
                 print(f"Failed to parse agent response as JSON: {e2}")
-                return {"buttons": np.zeros(1, dtype=np.int32), "camera": np.zeros(1, dtype=np.float32)}
+                return {
+                    "buttons": np.array([0]),
+                    "camera": np.array([60]),
+                }

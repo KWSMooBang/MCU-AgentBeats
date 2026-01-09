@@ -1,20 +1,13 @@
 import cv2  
 import base64
-import time
 from openai import OpenAI
 import os
-import requests
-import shutil
-from PIL import Image
-from io import BytesIO
 import json
-import openai
-import requests
 
 from datetime import datetime
 from pathlib import Path
-root_dir = Path(__file__).resolve().parents[2]
 
+root_dir = Path(__file__).resolve().parents[2]
 
 def extract_info(yaml_content, filename):
     lines = yaml_content.splitlines()
@@ -30,7 +23,6 @@ def extract_info(yaml_content, filename):
 
     task_name = filename[:-5].replace('_', ' ')
     return task_name, commands, text
-
 
 def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
     # Resolve task configs directory relative to this file's project root
@@ -60,7 +52,6 @@ def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|No
     
     return tasks
 
-
 def fetch(query, model='gpt-4o'): # gpt4
     print(f'fetching {model} ...')
     api_key = os.getenv('OPENAI_API_KEY')
@@ -74,7 +65,6 @@ def fetch(query, model='gpt-4o'): # gpt4
     )
     res = completion.choices[0].message.content
     return res
-
 
 def process_video(video_path: str) -> list[str]:
     """Extract frames from video and encode as base64.
@@ -108,7 +98,6 @@ def process_video(video_path: str) -> list[str]:
         base64Frames1 = base64Frames[0::70]
         
     return base64Frames1
-
 
 def assess_video(task, rule_file, frames, video_path):
     prompt_dir = root_dir / 'MCU_benchmark' / 'auto_eval' / 'prompt'

@@ -339,7 +339,7 @@ class TestAgentResponseParsing:
         assert "buttons" in action
         assert "camera" in action
         assert len(action["camera"]) == 1
-        assert action["camera"][0] == 0.0
+        assert action["camera"][0] == 60
     
     def test_parse_agent_response_empty_string(self, test_agent):
         """Test parsing empty response."""
@@ -350,7 +350,7 @@ class TestAgentResponseParsing:
         assert len(action["buttons"]) == 1
         assert len(action["camera"]) == 1
         assert action["buttons"][0] == 0
-        assert action["camera"][0] == 0.0
+        assert action["camera"][0] == 60
     
     def test_parse_agent_response_invalid_json(self, test_agent):
         """Test parsing invalid JSON."""
