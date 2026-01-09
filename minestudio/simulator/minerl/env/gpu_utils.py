@@ -1,11 +1,10 @@
 '''
 Date: 2024-11-29 11:05:35
-
+LastEditors: caishaofei caishaofei@stu.pku.edu.cn
 LastEditTime: 2024-11-29 11:07:37
 FilePath: /MineStudio/minestudio/simulator/minerl/env/gpu_utils.py
 '''
 # https://nvidia.github.io/cuda-python/
-from cuda import cuda, cudart
 import argparse
 import os
 
@@ -21,12 +20,15 @@ def call_and_check_error(func):
     return wrapper
 
 def getCudaDeviceCount():
+    from cuda import cudart
     return call_and_check_error(cudart.cudaGetDeviceCount)()
 
 def getPCIBusIdByCudaDeviceOrdinal(cuda_device_id):
     '''
     cuda_device_id 在 0 ~ getCudaDeviceCount() - 1 之间取值，受到 CUDA_VISIBLE_DEVICES 影响
     '''
+    from cuda import cuda
+
     device = call_and_check_error(cuda.cuDeviceGet)(cuda_device_id)
     result = call_and_check_error(cuda.cuDeviceGetPCIBusId)(100, device)
     return result.decode("ascii").split('\0')[0]

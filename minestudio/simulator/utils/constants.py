@@ -1,12 +1,25 @@
 '''
 Date: 2024-11-15 14:57:39
-
+LastEditors: muzhancun muzhancun@stu.pku.edu.cn
 LastEditTime: 2024-11-17 22:32:08
 FilePath: /Minestudio/minestudio/simulator/utils/constants.py
 '''
 
 class GUIConstants:
+    """
+    Defines constants used for the Minecraft GUI.
+
+    This includes keyboard and mouse mappings for actions, display dimensions,
+    FPS settings, and grid layout parameters for the information panel.
+    """
     def __init__(self):
+        """
+        Initializes GUIConstants.
+
+        Imports Pyglet and sets up action mappings, mouse sensitivity,
+        FPS, window dimensions (scaled to screen size if necessary),
+        and info panel grid layout.
+        """
         import pyglet
         import pyglet.window.key as key
         import pyglet.window.mouse as mouse

@@ -1,8 +1,8 @@
 '''
 Date: 2024-11-24 08:23:02
-
-LastEditTime: 2024-12-13 14:16:24
-FilePath: /MineStudio/minestudio/tutorials/train/3_pretrain_groots/main.py
+LastEditors: caishaofei-mus1 1744260356@qq.com
+LastEditTime: 2025-01-15 17:09:48
+FilePath: /MineStudio/minestudio/tutorials/offline/3_pretrain_groots/main.py
 '''
 import hydra
 import torch
@@ -13,7 +13,8 @@ from lightning.pytorch.callbacks import LearningRateMonitor
 from einops import rearrange
 from typing import Dict, Any, Tuple
 
-from minestudio.data import MineDataModule
+from minestudio.data import RawDataModule
+from minestudio.data.minecraft.callbacks import ImageKernelCallback, ActionKernelCallback
 from minestudio.offline import MineLightning
 from minestudio.models import GrootPolicy
 from minestudio.offline.utils import convert_to_normal
@@ -21,8 +22,8 @@ from minestudio.offline.mine_callbacks import BehaviorCloneCallback, KLDivergenc
 from minestudio.offline.lightning_callbacks import SmartCheckpointCallback, SpeedMonitorCallback, EMA
 
 
-logger = WandbLogger(project="minestudio")
-# logger = None
+# logger = WandbLogger(project="minestudio")
+logger = None
 @hydra.main(config_path='.', config_name='groot_config')
 def main(args):
     groot_policy = GrootPolicy(**convert_to_normal(args.model))
@@ -39,20 +40,24 @@ def main(args):
         hyperparameters=convert_to_normal(args),
     )
 
-    mine_data = MineDataModule(
+    mine_data = RawDataModule(
         data_params=dict(
-            mode='raw',
             dataset_dirs=args.dataset_dirs,
-            frame_width=224,
-            frame_height=224,
+            modal_kernel_callbacks=[
+                ImageKernelCallback(
+                    frame_width=224, 
+                    frame_height=224, 
+                    enable_video_aug=False
+                ),
+                ActionKernelCallback(),
+            ],
             win_len=128,
-            enable_segment=True,
+            split_ratio=args.split_ratio, 
+            shuffle_episodes=args.shuffle_episodes,
         ),
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         prefetch_factor=args.prefetch_factor,
-        split_ratio=args.split_ratio, 
-        shuffle_episodes=args.shuffle_episodes,
         episode_continuous_batch=args.episode_continuous_batch,
     )
 

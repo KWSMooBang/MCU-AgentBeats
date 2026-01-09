@@ -10,10 +10,16 @@ import sys
 import time
 from rich.console import Console
 
-DATABASE_DIR = str(Path(__file__).parent.parent / "tmp" / "database")
+# DATABASE_DIR = str(Path(__file__).parent.parent / "tmp" / "database")
+import socket
+from minestudio.utils.temp import get_mine_studio_dir
+hostname = socket.gethostname()
+DATABASE_DIR = str(Path(get_mine_studio_dir()) / f"{hostname}_tmp" / "database")
+
+
 RESETTING_EXPIRE = 5 * 60
 if not os.path.exists(DATABASE_DIR):
-    os.makedirs(DATABASE_DIR)
+    os.makedirs(DATABASE_DIR, exist_ok=True)
 
 if not os.environ.get("MINESTUDIO_DISABLE_DISKCACHE", False):
     # Console().log("Set JARVISBASE_DISABLE_DISKCACHE = False")

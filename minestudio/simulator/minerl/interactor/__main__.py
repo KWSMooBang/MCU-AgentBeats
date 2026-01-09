@@ -34,7 +34,7 @@ def request_interactor(instance, ip):
 def get_socket(instance):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    sock.settimeout(120) ##
+    sock.settimeout(60)
     sock.connect((instance.host, instance.port))
 
     return sock

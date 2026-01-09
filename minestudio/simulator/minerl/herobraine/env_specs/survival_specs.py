@@ -1,6 +1,6 @@
 '''
 Date: 2024-11-11 04:57:52
-
+LastEditors: caishaofei caishaofei@stu.pku.edu.cn
 LastEditTime: 2024-11-11 05:02:47
 FilePath: /MineStudio/minestudio/simulator/minerl/herobraine/env_specs/survival_specs.py
 '''

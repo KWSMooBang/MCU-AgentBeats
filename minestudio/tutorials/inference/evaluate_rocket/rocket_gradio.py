@@ -11,6 +11,7 @@ import numpy as np
 from io import BytesIO
 from PIL import Image, ImageDraw
 
+from minestudio.benchmark import prepare_task_configs
 from minestudio.tutorials.inference.evaluate_rocket.utils import Session, Pointer
 
 COLORS = [
@@ -176,10 +177,15 @@ def draw_gradio_components(args):
             """
         )
         
+        file_list = prepare_task_configs(args.task_group, path=args.task_group_path)
+        # print(file_list)
+        name_file_mapping = {name: file for name, file in file_list.items()}
+        env_list = [name for name, file in file_list.items()]
+        
         rocket_session = gr.State(Session(
-            model_loader=args.model_loader,
             model_path=args.model_path,
             sam_path=args.sam_path,
+            name_file_mapping=name_file_mapping, 
         ))
         molmo_session = gr.State(Pointer(
             model_id="molmo-72b-0924", 
@@ -238,8 +244,6 @@ def draw_gradio_components(args):
 
         with gr.Row():
             with gr.Group():
-                # env_name = gr.Textbox("rocket/", label="Env Name", show_label=False, min_width=200)
-                env_list = [f"rocket/{x.stem}" for x in Path("../global_configs/envs/rocket").glob("*.yaml") if 'base' not in x.name != 'base']
                 env_name = gr.Dropdown(env_list, multiselect=False, min_width=200, show_label=False, label="Env Name")
                 reset_btn = gr.Button("Reset Environment")
                 reset_btn.click(fn=reset_fn, inputs=[env_name, rocket_session], outputs=[display_image, rocket_session], show_progress=True)
@@ -279,12 +283,14 @@ def draw_gradio_components(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=7862)
-    parser.add_argument("--model-loader", type=str, default="load_rocket_policy")
-    parser.add_argument("--model-path", type=str, required=True)
+    parser.add_argument("--task-group", type=str, default="simple")
+    parser.add_argument("--task-group-path", type=str, default="CraftJarvis/MineStudio_task_group.simple")
+    parser.add_argument("--model-path", type=str, default="CraftJarvis/MineStudio_ROCKET-1.12w_EMA")
     parser.add_argument("--sam-path", type=str, required=True)
     parser.add_argument("--molmo-id", type=str, default="molmo-72b-0924")
     parser.add_argument("--molmo-url", type=str, default="http://127.0.0.1:8000/v1")
     args = parser.parse_args()
+    
     draw_gradio_components(args)
 
 if __name__ == "__main__":

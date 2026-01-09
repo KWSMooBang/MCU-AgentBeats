@@ -2,13 +2,31 @@ import numpy as np
 from minestudio.simulator.callbacks.callback import MinecraftCallback
 
 class GateRewardsCallback(MinecraftCallback):
+    """
+    A callback for calculating rewards based on the formation of a Nether portal.
+
+    This callback rewards the agent for building a valid Nether portal structure
+    using obsidian blocks.
+    """
     def __init__(self):
+        """
+        Initializes the GateRewardsCallback.
+        """
         super().__init__()
         self.prev_info = {}
         self.reward_memory = {}
         self.current_step = 0
     
     def reward_as_smlest_pos(self, obsidian_position, obsidian_positions):
+        """
+        Calculates the reward for a potential portal frame based on a starting obsidian block.
+
+        It checks for both X-fixed and Z-fixed portal orientations.
+
+        :param obsidian_position: The (x, y, z) coordinates of a starting obsidian block.
+        :param obsidian_positions: A list of (x, y, z) coordinates of all obsidian blocks.
+        :return: The calculated reward for the best portal frame found from this starting block.
+        """
         x, y, z = obsidian_position
         positive_pos = [(x, y, z), (x, y, z+1), (x, y, z+2), (x, y, z+3), 
                         (x, y+1, z+3), (x, y+2, z+3), (x, y+3, z+3), (x, y+4, z+3),
@@ -34,6 +52,16 @@ class GateRewardsCallback(MinecraftCallback):
         return larger_reward
     
     def gate_reward(self, info, obs = {}):
+        """
+        Calculates the gate reward based on the current voxel information.
+
+        It iterates through all obsidian blocks and finds the maximum possible
+        portal reward.
+
+        :param info: The info dictionary containing voxel data.
+        :param obs: The observation dictionary (optional).
+        :return: The maximum gate reward.
+        """
         if "voxels" not in info:
             return 0
         voxels = info["voxels"]
@@ -49,11 +77,33 @@ class GateRewardsCallback(MinecraftCallback):
         return max_reward   
 
     def after_reset(self, sim, obs, info):
+        """
+        Resets the current step count and previous reward.
+
+        :param sim: The Minecraft simulator.
+        :param obs: The observation from the simulator.
+        :param info: Additional information from the simulator.
+        :return: The observation and info.
+        """
         self.current_step = 0
         self.prev_reward = 0
         return obs, info
     
     def after_step(self, sim, obs, reward, terminated, truncated, info):
+        """
+        Calculates the gate reward for the current step.
+
+        The reward is the difference between the current gate reward and the previous
+        gate reward (delta reward).
+
+        :param sim: The Minecraft simulator.
+        :param obs: The observation from the simulator.
+        :param reward: The original reward from the simulator.
+        :param terminated: Whether the episode has terminated.
+        :param truncated: Whether the episode has been truncated.
+        :param info: Additional information from the simulator.
+        :return: The modified observation, overridden reward, terminated, truncated, and info.
+        """
         override_reward = 0.
         cur_reward = self.gate_reward(info, obs)
         override_reward = cur_reward - self.prev_reward

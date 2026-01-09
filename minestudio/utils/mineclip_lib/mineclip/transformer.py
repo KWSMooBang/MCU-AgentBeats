@@ -4,12 +4,12 @@ https://github.com/lucidrains/x-transformers
 pip install x_transformers==0.27.1
 """
 from x_transformers.x_transformers import *
-
+import torch
 
 __all__ = ["TemporalTransformer", "make_temporal_transformer"]
 
 
-class TemporalTransformer(nn.Module):
+class TemporalTransformer(torch.nn.Module):
     def __init__(
         self,
         *,

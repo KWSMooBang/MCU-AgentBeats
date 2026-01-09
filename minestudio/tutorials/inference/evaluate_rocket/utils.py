@@ -6,9 +6,9 @@ import torch
 import numpy as np
 from PIL import Image, ImageDraw
 
-import minestudio.models
+from minestudio.models import RocketPolicy, load_rocket_policy
 from minestudio.simulator import MinecraftSim
-from minestudio.utils import Registers
+from minestudio.simulator.callbacks import load_callbacks_from_config
 
 from sam2.build_sam import build_sam2_camera_predictor
 import re
@@ -60,12 +60,12 @@ SEGMENT_MAPPING = {
 
 class Session:
     
-    def __init__(self, model_loader: str, model_path: str, sam_path: str):
+    def __init__(self, model_path: str, sam_path: str, name_file_mapping: dict):
         start_image = np.zeros((360, 640, 3), dtype=np.uint8)
         self.current_image = np.array(start_image)
-        self.model_loader = model_loader
         self.model_path = model_path
         self.sam_path = sam_path
+        self.name_file_mapping = name_file_mapping
         self.clear_points()
         
         self.sam_choice = 'base'
@@ -127,7 +127,10 @@ class Session:
     def reset(self, env_name: str):
         self.image_history = []
         # self.env = MinecraftWrapper(env_name, prev_action_obs=False)
-        self.env = MinecraftSim(preferred_spawn_biome="plains")
+        self.env = MinecraftSim(
+            preferred_spawn_biome="plains", 
+            callbacks=load_callbacks_from_config(self.name_file_mapping[env_name]),
+        )
         self.obs, self.info = self.env.reset()
         for i in range(30): #! better init
             time.sleep(0.1)
@@ -135,8 +138,11 @@ class Session:
             self.obs, self.reward, terminated, truncated, self.info = self.env.step(noop_action)
         
         self.reward = 0
-        model_loader = Registers.model_loader[self.model_loader]
-        self.agent = model_loader(self.model_path).to("cuda")
+        if os.path.exists(self.model_path):
+            agent = load_rocket_policy(self.model_path)
+        else:
+            agent = RocketPolicy.from_pretrained(self.model_path)
+        self.agent = agent.to("cuda")
         self.agent.eval()
         self.clear_agent_memory()
         self.current_image = self.info["pov"]

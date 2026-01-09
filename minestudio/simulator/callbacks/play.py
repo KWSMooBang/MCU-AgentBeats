@@ -1,30 +1,60 @@
 '''
 Date: 2024-11-14 20:10:54
-
+LastEditors: muzhancun muzhancun@stu.pku.edu.cn
 LastEditTime: 2024-11-20 01:06:35
 FilePath: /MineStudio/minestudio/simulator/callbacks/play.py
 '''
-from minestudio.simulator.callbacks import MinecraftCallback
+from minestudio.simulator.callbacks.callback import MinecraftCallback
 from minestudio.simulator.utils import MinecraftGUI, GUIConstants
 
 import time
-from typing import Dict, Literal, Optional, Callable
+from typing import Dict, Literal, Optional, Callable, Tuple, List, Any
+from minestudio.utils import get_compute_device
 from rich import print
 
 DEBUG = False
+
 class PlayCallback(MinecraftCallback):
+    """Enables interactive play and/or agent-driven gameplay in a GUI window.
+
+    This callback provides a graphical interface for human players to interact
+    with the Minecraft environment. It can also run a pre-trained agent and
+    allow switching control between human and agent.
+
+    Key functionalities:
+    - Renders the game view in a separate window.
+    - Captures keyboard and mouse input for human control.
+    - Can load and run a specified agent model.
+    - Allows switching between human and agent control (default: 'L' key).
+    - Displays game information (FPS, player position, current mode) in the GUI.
+    - Handles custom key bindings for actions like mouse capture and closing.
+
+    :param agent_generator: A callable that returns an agent instance. 
+                            If None, only human play is enabled. Defaults to None.
+    :type agent_generator: Callable, optional
+    :param extra_draw_call: A list of additional callable functions to be executed
+                              during the GUI drawing phase. Defaults to None.
+    :type extra_draw_call: Optional[List[Callable]], optional
+    """
     def __init__(
         self,
         agent_generator: Callable = None,
-        extra_draw_call: Optional[list[Callable]] = None
+        extra_draw_call: Optional[List[Callable]] = None
     ):
+        """Initializes the PlayCallback.
+
+        Sets up the GUI, loads the agent if provided, and prints key bindings.
+
+        :param agent_generator: Function to generate the agent model.
+        :param extra_draw_call: Additional functions for custom GUI drawing.
+        """
         self.gui = MinecraftGUI(extra_draw_call=extra_draw_call)
         self.constants = GUIConstants()
         self.start_time = time.time()
         self.end_time = time.time()
         if agent_generator is not None:
             print(f'[green]Load agent with name: {agent_generator.func.__name__}, args: {agent_generator.keywords}[/green]')
-            self.agent = agent_generator().to("cuda")
+            self.agent = agent_generator().to(get_compute_device())
         else:
             self.agent = None
         self.switch = 'human'
@@ -44,13 +74,34 @@ class PlayCallback(MinecraftCallback):
         )
     
     def reset_agent(self):
+        """Resets the agent's internal state (e.g., memory).
+
+        Called when switching to agent control or at the start of a new episode.
+        """
         self.memory = None
 
-    def before_reset(self, sim, reset_flag):
+    def before_reset(self, sim, reset_flag: bool) -> bool:
+        """Resets the GUI before the environment resets.
+
+        :param sim: The simulator instance.
+        :param reset_flag: The current reset flag status.
+        :returns: The passed `reset_flag`.
+        :rtype: bool
+        """
         self.gui.reset_gui()
         return reset_flag
     
-    def after_reset(self, sim, obs, info):
+    def after_reset(self, sim, obs: Dict, info: Dict) -> Tuple[Dict, Dict]:
+        """Handles tasks after the environment resets.
+
+        Resets termination flag, agent state, updates GUI, and resets timestep.
+
+        :param sim: The simulator instance.
+        :param obs: The initial observation.
+        :param info: The initial info dictionary.
+        :returns: The passed `obs` and `info`.
+        :rtype: Tuple[Dict, Dict]
+        """
         self.terminated = False
         if self.agent is not None:
             self.reset_agent()
@@ -59,15 +110,19 @@ class PlayCallback(MinecraftCallback):
         self.timestep = 0
         return obs, info
     
-    def before_step(self, sim, action):
-        """
-        Step environment for one frame.
+    def before_step(self, sim, action: Any) -> Dict:
+        """Determines and processes the action before the environment steps.
 
-        If `action` is not str or None, assume it is a valid action and pass it to the environment.
-        If `action` is `human`, read action from player (current keyboard/mouse state).
-        Else, assume it is a agent and execute the action from the agent.
+        Handles input from human (keyboard/mouse via GUI) or agent based on
+        the current control switch (`self.switch`). Also processes chat messages.
 
         The executed action will be added to the info dict as "taken_action".
+
+        :param sim: The simulator instance.
+        :param action: The proposed action (can be None, a string like 'human', or an action dict).
+        :type action: Any
+        :returns: The action dictionary to be executed by the environment.
+        :rtype: Dict
         """
         assert not self.terminated, "Cannot step environment after it is done."
 
@@ -101,7 +156,21 @@ class PlayCallback(MinecraftCallback):
         self.last_action = action
         return action
     
-    def after_step(self, sim, obs, reward, terminated, truncated, info):
+    def after_step(self, sim, obs: Dict, reward: float, terminated: bool, truncated: bool, info: Dict) -> Tuple[Dict, float, bool, bool, Dict]:
+        """Handles tasks after the environment takes a step.
+
+        Updates GUI with new observation and info, calculates FPS, processes key releases
+        (like switching control or mouse capture), and handles termination.
+
+        :param sim: The simulator instance.
+        :param obs: The observation after the step.
+        :param reward: The reward received.
+        :param terminated: Whether the episode has terminated.
+        :param truncated: Whether the episode has been truncated.
+        :param info: The info dictionary.
+        :returns: The (potentially modified) obs, reward, terminated, truncated, and info.
+        :rtype: Tuple[Dict, float, bool, bool, Dict]
+        """
         self.terminated = terminated
         self.timestep += 1
         self.end_time = time.time()
@@ -192,9 +261,26 @@ class PlayCallback(MinecraftCallback):
         return obs, reward, terminated, truncated, info
 
     def before_close(self, sim):
+        """Closes the GUI window before the simulator closes.
+
+        :param sim: The simulator instance.
+        """
         self.gui.close_gui()
 
-    def process_keys(self, sim, released_keys):
+    def process_keys(self, sim, released_keys: set) -> set:
+        """Processes special key releases for GUI and simulation control.
+
+        Handles:
+        - 'C': Toggle mouse capture (exclusive mouse mode).
+        - Ctrl+'C': Close the window and terminate the simulation.
+        - 'ESCAPE': Enter/exit command mode (currently exits by clearing keys).
+
+        :param sim: The simulator instance.
+        :param released_keys: A set of keys that were released in this frame.
+        :type released_keys: set
+        :returns: The set of `released_keys` after processing (potentially modified).
+        :rtype: set
+        """
         # press 'C' to set mouse visibility
         if 'C' in released_keys:
             # print('shit')
@@ -209,14 +295,15 @@ class PlayCallback(MinecraftCallback):
 
         # press 'ESC' to enter command mode
         if 'ESCAPE' in released_keys:
-            time = 0
+            time_count = 0 # Renamed variable to avoid conflict with time module
             while True:
                 self.gui.window.dispatch_events()
                 self.gui.window.switch_to()
                 self.gui.window.flip()
-                released_keys = self.gui._capture_all_keys()
-                time += 1
-                if len(released_keys) > 0:
+                current_released_keys = self.gui._capture_all_keys() # Use a different variable name
+                time_count += 1
+                if len(current_released_keys) > 0:
+                    released_keys = current_released_keys # Update the original set if needed
                     break
             self.gui.mode = 'normal'
             # delete ESCAPE in released keys
@@ -229,6 +316,5 @@ class PlayCallback(MinecraftCallback):
             released_keys = set()
         
         return released_keys
-        
 
-        
+

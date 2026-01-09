@@ -1,7 +1,7 @@
 '''
 Date: 2024-11-25 08:11:33
-
-LastEditTime: 2024-12-15 14:17:07
+LastEditors: muzhancun muzhancun@stu.pku.edu.cn
+LastEditTime: 2025-06-06 14:02:15
 FilePath: /MineStudio/minestudio/tutorials/inference/evaluate_vpts/mine_diamond.py
 '''
 import ray
@@ -9,7 +9,7 @@ from rich import print
 from minestudio.inference import EpisodePipeline, MineGenerator, InfoBaseFilter
 
 from functools import partial
-from minestudio.models import load_vpt_policy
+from minestudio.models import load_vpt_policy, VPTPolicy
 from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import SpeedTestCallback
 
@@ -23,11 +23,7 @@ if __name__ == '__main__':
             SpeedTestCallback(50), 
         ],
     )
-    agent_generator = partial(
-        load_vpt_policy,
-        model_path="pretrained/foundation-model-2x.model",
-        weights_path="pretrained/rl-from-early-game-2x.weights"
-    )
+    agent_generator = lambda: VPTPolicy.from_pretrained("CraftJarvis/MineStudio_VPT.rl_from_early_game_2x")
     worker_kwargs = dict(
         env_generator=env_generator, 
         agent_generator=agent_generator,
@@ -45,7 +41,7 @@ if __name__ == '__main__':
         ), 
         episode_filter=InfoBaseFilter(
             key="mine_block",
-            val="diamond_ore",
+            regex=".*diamond_ore.*",
             num=1,
         ),
     )

@@ -22,7 +22,7 @@ do
     esac
     shift
 done
-  
+
 if ! [[ $port =~ ^-?[0-9]+$ ]]; then
     echo "Port value should be numeric"
     exit 1
@@ -35,7 +35,11 @@ if [ \( $port -lt 0 \) -o \( $port -gt 65535 \) ]; then
 fi
 
 if [ "$device" == "cpu" ]; then
-    xvfb-run -a java -Xmx$maxMem -jar $fatjar --envPort=$port
+    if [ "$(uname)" = "Darwin" ]; then
+        java -Xmx$maxMem -XstartOnFirstThread -jar $fatjar --envPort=$port
+    else
+        xvfb-run -a java -Xmx$maxMem -jar $fatjar --envPort=$port
+    fi
 else
     vglrun -d $device java -Xmx$maxMem -jar $fatjar --envPort=$port
 fi

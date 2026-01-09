@@ -60862,3 +60862,3721 @@
       ]
     },
     {
+      "statID": "drop.melon_slice",
+      "minerl_keys": [
+        "drop",
+        "melon_slice"
+      ]
+    },
+    {
+      "statID": "drop.dried_kelp",
+      "minerl_keys": [
+        "drop",
+        "dried_kelp"
+      ]
+    },
+    {
+      "statID": "drop.pumpkin_seeds",
+      "minerl_keys": [
+        "drop",
+        "pumpkin_seeds"
+      ]
+    },
+    {
+      "statID": "drop.melon_seeds",
+      "minerl_keys": [
+        "drop",
+        "melon_seeds"
+      ]
+    },
+    {
+      "statID": "drop.beef",
+      "minerl_keys": [
+        "drop",
+        "beef"
+      ]
+    },
+    {
+      "statID": "drop.cooked_beef",
+      "minerl_keys": [
+        "drop",
+        "cooked_beef"
+      ]
+    },
+    {
+      "statID": "drop.chicken",
+      "minerl_keys": [
+        "drop",
+        "chicken"
+      ]
+    },
+    {
+      "statID": "drop.cooked_chicken",
+      "minerl_keys": [
+        "drop",
+        "cooked_chicken"
+      ]
+    },
+    {
+      "statID": "drop.rotten_flesh",
+      "minerl_keys": [
+        "drop",
+        "rotten_flesh"
+      ]
+    },
+    {
+      "statID": "drop.ender_pearl",
+      "minerl_keys": [
+        "drop",
+        "ender_pearl"
+      ]
+    },
+    {
+      "statID": "drop.blaze_rod",
+      "minerl_keys": [
+        "drop",
+        "blaze_rod"
+      ]
+    },
+    {
+      "statID": "drop.ghast_tear",
+      "minerl_keys": [
+        "drop",
+        "ghast_tear"
+      ]
+    },
+    {
+      "statID": "drop.gold_nugget",
+      "minerl_keys": [
+        "drop",
+        "gold_nugget"
+      ]
+    },
+    {
+      "statID": "drop.nether_wart",
+      "minerl_keys": [
+        "drop",
+        "nether_wart"
+      ]
+    },
+    {
+      "statID": "drop.potion",
+      "minerl_keys": [
+        "drop",
+        "potion"
+      ]
+    },
+    {
+      "statID": "drop.glass_bottle",
+      "minerl_keys": [
+        "drop",
+        "glass_bottle"
+      ]
+    },
+    {
+      "statID": "drop.spider_eye",
+      "minerl_keys": [
+        "drop",
+        "spider_eye"
+      ]
+    },
+    {
+      "statID": "drop.fermented_spider_eye",
+      "minerl_keys": [
+        "drop",
+        "fermented_spider_eye"
+      ]
+    },
+    {
+      "statID": "drop.blaze_powder",
+      "minerl_keys": [
+        "drop",
+        "blaze_powder"
+      ]
+    },
+    {
+      "statID": "drop.magma_cream",
+      "minerl_keys": [
+        "drop",
+        "magma_cream"
+      ]
+    },
+    {
+      "statID": "drop.brewing_stand",
+      "minerl_keys": [
+        "drop",
+        "brewing_stand"
+      ]
+    },
+    {
+      "statID": "drop.cauldron",
+      "minerl_keys": [
+        "drop",
+        "cauldron"
+      ]
+    },
+    {
+      "statID": "drop.ender_eye",
+      "minerl_keys": [
+        "drop",
+        "ender_eye"
+      ]
+    },
+    {
+      "statID": "drop.glistering_melon_slice",
+      "minerl_keys": [
+        "drop",
+        "glistering_melon_slice"
+      ]
+    },
+    {
+      "statID": "drop.bat_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "bat_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.bee_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "bee_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.blaze_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "blaze_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.cat_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "cat_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.cave_spider_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "cave_spider_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.chicken_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "chicken_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.cod_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "cod_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.cow_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "cow_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.creeper_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "creeper_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.dolphin_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "dolphin_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.donkey_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "donkey_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.drowned_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "drowned_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.elder_guardian_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "elder_guardian_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.enderman_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "enderman_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.endermite_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "endermite_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.evoker_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "evoker_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.fox_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "fox_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.ghast_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "ghast_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.guardian_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "guardian_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.hoglin_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "hoglin_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.horse_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "horse_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.husk_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "husk_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.llama_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "llama_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.magma_cube_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "magma_cube_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.mooshroom_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "mooshroom_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.mule_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "mule_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.ocelot_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "ocelot_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.panda_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "panda_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.parrot_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "parrot_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.phantom_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "phantom_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.pig_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "pig_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.piglin_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "piglin_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.piglin_brute_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "piglin_brute_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.pillager_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "pillager_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.polar_bear_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "polar_bear_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.pufferfish_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "pufferfish_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.rabbit_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "rabbit_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.ravager_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "ravager_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.salmon_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "salmon_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.sheep_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "sheep_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.shulker_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "shulker_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.silverfish_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "silverfish_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.skeleton_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "skeleton_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.skeleton_horse_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "skeleton_horse_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.slime_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "slime_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.spider_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "spider_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.squid_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "squid_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.stray_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "stray_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.strider_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "strider_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.trader_llama_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "trader_llama_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.tropical_fish_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "tropical_fish_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.turtle_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "turtle_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.vex_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "vex_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.villager_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "villager_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.vindicator_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "vindicator_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.wandering_trader_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "wandering_trader_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.witch_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "witch_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.wither_skeleton_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "wither_skeleton_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.wolf_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "wolf_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.zoglin_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "zoglin_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.zombie_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "zombie_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.zombie_horse_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "zombie_horse_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.zombie_villager_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "zombie_villager_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.zombified_piglin_spawn_egg",
+      "minerl_keys": [
+        "drop",
+        "zombified_piglin_spawn_egg"
+      ]
+    },
+    {
+      "statID": "drop.experience_bottle",
+      "minerl_keys": [
+        "drop",
+        "experience_bottle"
+      ]
+    },
+    {
+      "statID": "drop.fire_charge",
+      "minerl_keys": [
+        "drop",
+        "fire_charge"
+      ]
+    },
+    {
+      "statID": "drop.writable_book",
+      "minerl_keys": [
+        "drop",
+        "writable_book"
+      ]
+    },
+    {
+      "statID": "drop.written_book",
+      "minerl_keys": [
+        "drop",
+        "written_book"
+      ]
+    },
+    {
+      "statID": "drop.emerald",
+      "minerl_keys": [
+        "drop",
+        "emerald"
+      ]
+    },
+    {
+      "statID": "drop.item_frame",
+      "minerl_keys": [
+        "drop",
+        "item_frame"
+      ]
+    },
+    {
+      "statID": "drop.flower_pot",
+      "minerl_keys": [
+        "drop",
+        "flower_pot"
+      ]
+    },
+    {
+      "statID": "drop.carrot",
+      "minerl_keys": [
+        "drop",
+        "carrot"
+      ]
+    },
+    {
+      "statID": "drop.potato",
+      "minerl_keys": [
+        "drop",
+        "potato"
+      ]
+    },
+    {
+      "statID": "drop.baked_potato",
+      "minerl_keys": [
+        "drop",
+        "baked_potato"
+      ]
+    },
+    {
+      "statID": "drop.poisonous_potato",
+      "minerl_keys": [
+        "drop",
+        "poisonous_potato"
+      ]
+    },
+    {
+      "statID": "drop.map",
+      "minerl_keys": [
+        "drop",
+        "map"
+      ]
+    },
+    {
+      "statID": "drop.golden_carrot",
+      "minerl_keys": [
+        "drop",
+        "golden_carrot"
+      ]
+    },
+    {
+      "statID": "drop.skeleton_skull",
+      "minerl_keys": [
+        "drop",
+        "skeleton_skull"
+      ]
+    },
+    {
+      "statID": "drop.wither_skeleton_skull",
+      "minerl_keys": [
+        "drop",
+        "wither_skeleton_skull"
+      ]
+    },
+    {
+      "statID": "drop.player_head",
+      "minerl_keys": [
+        "drop",
+        "player_head"
+      ]
+    },
+    {
+      "statID": "drop.zombie_head",
+      "minerl_keys": [
+        "drop",
+        "zombie_head"
+      ]
+    },
+    {
+      "statID": "drop.creeper_head",
+      "minerl_keys": [
+        "drop",
+        "creeper_head"
+      ]
+    },
+    {
+      "statID": "drop.dragon_head",
+      "minerl_keys": [
+        "drop",
+        "dragon_head"
+      ]
+    },
+    {
+      "statID": "drop.carrot_on_a_stick",
+      "minerl_keys": [
+        "drop",
+        "carrot_on_a_stick"
+      ]
+    },
+    {
+      "statID": "drop.warped_fungus_on_a_stick",
+      "minerl_keys": [
+        "drop",
+        "warped_fungus_on_a_stick"
+      ]
+    },
+    {
+      "statID": "drop.nether_star",
+      "minerl_keys": [
+        "drop",
+        "nether_star"
+      ]
+    },
+    {
+      "statID": "drop.pumpkin_pie",
+      "minerl_keys": [
+        "drop",
+        "pumpkin_pie"
+      ]
+    },
+    {
+      "statID": "drop.firework_rocket",
+      "minerl_keys": [
+        "drop",
+        "firework_rocket"
+      ]
+    },
+    {
+      "statID": "drop.firework_star",
+      "minerl_keys": [
+        "drop",
+        "firework_star"
+      ]
+    },
+    {
+      "statID": "drop.enchanted_book",
+      "minerl_keys": [
+        "drop",
+        "enchanted_book"
+      ]
+    },
+    {
+      "statID": "drop.nether_brick",
+      "minerl_keys": [
+        "drop",
+        "nether_brick"
+      ]
+    },
+    {
+      "statID": "drop.quartz",
+      "minerl_keys": [
+        "drop",
+        "quartz"
+      ]
+    },
+    {
+      "statID": "drop.tnt_minecart",
+      "minerl_keys": [
+        "drop",
+        "tnt_minecart"
+      ]
+    },
+    {
+      "statID": "drop.hopper_minecart",
+      "minerl_keys": [
+        "drop",
+        "hopper_minecart"
+      ]
+    },
+    {
+      "statID": "drop.prismarine_shard",
+      "minerl_keys": [
+        "drop",
+        "prismarine_shard"
+      ]
+    },
+    {
+      "statID": "drop.prismarine_crystals",
+      "minerl_keys": [
+        "drop",
+        "prismarine_crystals"
+      ]
+    },
+    {
+      "statID": "drop.rabbit",
+      "minerl_keys": [
+        "drop",
+        "rabbit"
+      ]
+    },
+    {
+      "statID": "drop.cooked_rabbit",
+      "minerl_keys": [
+        "drop",
+        "cooked_rabbit"
+      ]
+    },
+    {
+      "statID": "drop.rabbit_stew",
+      "minerl_keys": [
+        "drop",
+        "rabbit_stew"
+      ]
+    },
+    {
+      "statID": "drop.rabbit_foot",
+      "minerl_keys": [
+        "drop",
+        "rabbit_foot"
+      ]
+    },
+    {
+      "statID": "drop.rabbit_hide",
+      "minerl_keys": [
+        "drop",
+        "rabbit_hide"
+      ]
+    },
+    {
+      "statID": "drop.armor_stand",
+      "minerl_keys": [
+        "drop",
+        "armor_stand"
+      ]
+    },
+    {
+      "statID": "drop.iron_horse_armor",
+      "minerl_keys": [
+        "drop",
+        "iron_horse_armor"
+      ]
+    },
+    {
+      "statID": "drop.golden_horse_armor",
+      "minerl_keys": [
+        "drop",
+        "golden_horse_armor"
+      ]
+    },
+    {
+      "statID": "drop.diamond_horse_armor",
+      "minerl_keys": [
+        "drop",
+        "diamond_horse_armor"
+      ]
+    },
+    {
+      "statID": "drop.leather_horse_armor",
+      "minerl_keys": [
+        "drop",
+        "leather_horse_armor"
+      ]
+    },
+    {
+      "statID": "drop.lead",
+      "minerl_keys": [
+        "drop",
+        "lead"
+      ]
+    },
+    {
+      "statID": "drop.name_tag",
+      "minerl_keys": [
+        "drop",
+        "name_tag"
+      ]
+    },
+    {
+      "statID": "drop.command_block_minecart",
+      "minerl_keys": [
+        "drop",
+        "command_block_minecart"
+      ]
+    },
+    {
+      "statID": "drop.mutton",
+      "minerl_keys": [
+        "drop",
+        "mutton"
+      ]
+    },
+    {
+      "statID": "drop.cooked_mutton",
+      "minerl_keys": [
+        "drop",
+        "cooked_mutton"
+      ]
+    },
+    {
+      "statID": "drop.white_banner",
+      "minerl_keys": [
+        "drop",
+        "white_banner"
+      ]
+    },
+    {
+      "statID": "drop.orange_banner",
+      "minerl_keys": [
+        "drop",
+        "orange_banner"
+      ]
+    },
+    {
+      "statID": "drop.magenta_banner",
+      "minerl_keys": [
+        "drop",
+        "magenta_banner"
+      ]
+    },
+    {
+      "statID": "drop.light_blue_banner",
+      "minerl_keys": [
+        "drop",
+        "light_blue_banner"
+      ]
+    },
+    {
+      "statID": "drop.yellow_banner",
+      "minerl_keys": [
+        "drop",
+        "yellow_banner"
+      ]
+    },
+    {
+      "statID": "drop.lime_banner",
+      "minerl_keys": [
+        "drop",
+        "lime_banner"
+      ]
+    },
+    {
+      "statID": "drop.pink_banner",
+      "minerl_keys": [
+        "drop",
+        "pink_banner"
+      ]
+    },
+    {
+      "statID": "drop.gray_banner",
+      "minerl_keys": [
+        "drop",
+        "gray_banner"
+      ]
+    },
+    {
+      "statID": "drop.light_gray_banner",
+      "minerl_keys": [
+        "drop",
+        "light_gray_banner"
+      ]
+    },
+    {
+      "statID": "drop.cyan_banner",
+      "minerl_keys": [
+        "drop",
+        "cyan_banner"
+      ]
+    },
+    {
+      "statID": "drop.purple_banner",
+      "minerl_keys": [
+        "drop",
+        "purple_banner"
+      ]
+    },
+    {
+      "statID": "drop.blue_banner",
+      "minerl_keys": [
+        "drop",
+        "blue_banner"
+      ]
+    },
+    {
+      "statID": "drop.brown_banner",
+      "minerl_keys": [
+        "drop",
+        "brown_banner"
+      ]
+    },
+    {
+      "statID": "drop.green_banner",
+      "minerl_keys": [
+        "drop",
+        "green_banner"
+      ]
+    },
+    {
+      "statID": "drop.red_banner",
+      "minerl_keys": [
+        "drop",
+        "red_banner"
+      ]
+    },
+    {
+      "statID": "drop.black_banner",
+      "minerl_keys": [
+        "drop",
+        "black_banner"
+      ]
+    },
+    {
+      "statID": "drop.end_crystal",
+      "minerl_keys": [
+        "drop",
+        "end_crystal"
+      ]
+    },
+    {
+      "statID": "drop.chorus_fruit",
+      "minerl_keys": [
+        "drop",
+        "chorus_fruit"
+      ]
+    },
+    {
+      "statID": "drop.popped_chorus_fruit",
+      "minerl_keys": [
+        "drop",
+        "popped_chorus_fruit"
+      ]
+    },
+    {
+      "statID": "drop.beetroot",
+      "minerl_keys": [
+        "drop",
+        "beetroot"
+      ]
+    },
+    {
+      "statID": "drop.beetroot_seeds",
+      "minerl_keys": [
+        "drop",
+        "beetroot_seeds"
+      ]
+    },
+    {
+      "statID": "drop.beetroot_soup",
+      "minerl_keys": [
+        "drop",
+        "beetroot_soup"
+      ]
+    },
+    {
+      "statID": "drop.dragon_breath",
+      "minerl_keys": [
+        "drop",
+        "dragon_breath"
+      ]
+    },
+    {
+      "statID": "drop.splash_potion",
+      "minerl_keys": [
+        "drop",
+        "splash_potion"
+      ]
+    },
+    {
+      "statID": "drop.spectral_arrow",
+      "minerl_keys": [
+        "drop",
+        "spectral_arrow"
+      ]
+    },
+    {
+      "statID": "drop.tipped_arrow",
+      "minerl_keys": [
+        "drop",
+        "tipped_arrow"
+      ]
+    },
+    {
+      "statID": "drop.lingering_potion",
+      "minerl_keys": [
+        "drop",
+        "lingering_potion"
+      ]
+    },
+    {
+      "statID": "drop.shield",
+      "minerl_keys": [
+        "drop",
+        "shield"
+      ]
+    },
+    {
+      "statID": "drop.elytra",
+      "minerl_keys": [
+        "drop",
+        "elytra"
+      ]
+    },
+    {
+      "statID": "drop.spruce_boat",
+      "minerl_keys": [
+        "drop",
+        "spruce_boat"
+      ]
+    },
+    {
+      "statID": "drop.birch_boat",
+      "minerl_keys": [
+        "drop",
+        "birch_boat"
+      ]
+    },
+    {
+      "statID": "drop.jungle_boat",
+      "minerl_keys": [
+        "drop",
+        "jungle_boat"
+      ]
+    },
+    {
+      "statID": "drop.acacia_boat",
+      "minerl_keys": [
+        "drop",
+        "acacia_boat"
+      ]
+    },
+    {
+      "statID": "drop.dark_oak_boat",
+      "minerl_keys": [
+        "drop",
+        "dark_oak_boat"
+      ]
+    },
+    {
+      "statID": "drop.totem_of_undying",
+      "minerl_keys": [
+        "drop",
+        "totem_of_undying"
+      ]
+    },
+    {
+      "statID": "drop.shulker_shell",
+      "minerl_keys": [
+        "drop",
+        "shulker_shell"
+      ]
+    },
+    {
+      "statID": "drop.iron_nugget",
+      "minerl_keys": [
+        "drop",
+        "iron_nugget"
+      ]
+    },
+    {
+      "statID": "drop.knowledge_book",
+      "minerl_keys": [
+        "drop",
+        "knowledge_book"
+      ]
+    },
+    {
+      "statID": "drop.debug_stick",
+      "minerl_keys": [
+        "drop",
+        "debug_stick"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_13",
+      "minerl_keys": [
+        "drop",
+        "music_disc_13"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_cat",
+      "minerl_keys": [
+        "drop",
+        "music_disc_cat"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_blocks",
+      "minerl_keys": [
+        "drop",
+        "music_disc_blocks"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_chirp",
+      "minerl_keys": [
+        "drop",
+        "music_disc_chirp"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_far",
+      "minerl_keys": [
+        "drop",
+        "music_disc_far"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_mall",
+      "minerl_keys": [
+        "drop",
+        "music_disc_mall"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_mellohi",
+      "minerl_keys": [
+        "drop",
+        "music_disc_mellohi"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_stal",
+      "minerl_keys": [
+        "drop",
+        "music_disc_stal"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_strad",
+      "minerl_keys": [
+        "drop",
+        "music_disc_strad"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_ward",
+      "minerl_keys": [
+        "drop",
+        "music_disc_ward"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_11",
+      "minerl_keys": [
+        "drop",
+        "music_disc_11"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_wait",
+      "minerl_keys": [
+        "drop",
+        "music_disc_wait"
+      ]
+    },
+    {
+      "statID": "drop.music_disc_pigstep",
+      "minerl_keys": [
+        "drop",
+        "music_disc_pigstep"
+      ]
+    },
+    {
+      "statID": "drop.trident",
+      "minerl_keys": [
+        "drop",
+        "trident"
+      ]
+    },
+    {
+      "statID": "drop.phantom_membrane",
+      "minerl_keys": [
+        "drop",
+        "phantom_membrane"
+      ]
+    },
+    {
+      "statID": "drop.nautilus_shell",
+      "minerl_keys": [
+        "drop",
+        "nautilus_shell"
+      ]
+    },
+    {
+      "statID": "drop.heart_of_the_sea",
+      "minerl_keys": [
+        "drop",
+        "heart_of_the_sea"
+      ]
+    },
+    {
+      "statID": "drop.crossbow",
+      "minerl_keys": [
+        "drop",
+        "crossbow"
+      ]
+    },
+    {
+      "statID": "drop.suspicious_stew",
+      "minerl_keys": [
+        "drop",
+        "suspicious_stew"
+      ]
+    },
+    {
+      "statID": "drop.loom",
+      "minerl_keys": [
+        "drop",
+        "loom"
+      ]
+    },
+    {
+      "statID": "drop.flower_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "flower_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.creeper_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "creeper_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.skull_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "skull_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.mojang_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "mojang_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.globe_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "globe_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.piglin_banner_pattern",
+      "minerl_keys": [
+        "drop",
+        "piglin_banner_pattern"
+      ]
+    },
+    {
+      "statID": "drop.composter",
+      "minerl_keys": [
+        "drop",
+        "composter"
+      ]
+    },
+    {
+      "statID": "drop.barrel",
+      "minerl_keys": [
+        "drop",
+        "barrel"
+      ]
+    },
+    {
+      "statID": "drop.smoker",
+      "minerl_keys": [
+        "drop",
+        "smoker"
+      ]
+    },
+    {
+      "statID": "drop.blast_furnace",
+      "minerl_keys": [
+        "drop",
+        "blast_furnace"
+      ]
+    },
+    {
+      "statID": "drop.cartography_table",
+      "minerl_keys": [
+        "drop",
+        "cartography_table"
+      ]
+    },
+    {
+      "statID": "drop.fletching_table",
+      "minerl_keys": [
+        "drop",
+        "fletching_table"
+      ]
+    },
+    {
+      "statID": "drop.grindstone",
+      "minerl_keys": [
+        "drop",
+        "grindstone"
+      ]
+    },
+    {
+      "statID": "drop.lectern",
+      "minerl_keys": [
+        "drop",
+        "lectern"
+      ]
+    },
+    {
+      "statID": "drop.smithing_table",
+      "minerl_keys": [
+        "drop",
+        "smithing_table"
+      ]
+    },
+    {
+      "statID": "drop.stonecutter",
+      "minerl_keys": [
+        "drop",
+        "stonecutter"
+      ]
+    },
+    {
+      "statID": "drop.bell",
+      "minerl_keys": [
+        "drop",
+        "bell"
+      ]
+    },
+    {
+      "statID": "drop.lantern",
+      "minerl_keys": [
+        "drop",
+        "lantern"
+      ]
+    },
+    {
+      "statID": "drop.soul_lantern",
+      "minerl_keys": [
+        "drop",
+        "soul_lantern"
+      ]
+    },
+    {
+      "statID": "drop.sweet_berries",
+      "minerl_keys": [
+        "drop",
+        "sweet_berries"
+      ]
+    },
+    {
+      "statID": "drop.campfire",
+      "minerl_keys": [
+        "drop",
+        "campfire"
+      ]
+    },
+    {
+      "statID": "drop.soul_campfire",
+      "minerl_keys": [
+        "drop",
+        "soul_campfire"
+      ]
+    },
+    {
+      "statID": "drop.shroomlight",
+      "minerl_keys": [
+        "drop",
+        "shroomlight"
+      ]
+    },
+    {
+      "statID": "drop.honeycomb",
+      "minerl_keys": [
+        "drop",
+        "honeycomb"
+      ]
+    },
+    {
+      "statID": "drop.bee_nest",
+      "minerl_keys": [
+        "drop",
+        "bee_nest"
+      ]
+    },
+    {
+      "statID": "drop.beehive",
+      "minerl_keys": [
+        "drop",
+        "beehive"
+      ]
+    },
+    {
+      "statID": "drop.honey_bottle",
+      "minerl_keys": [
+        "drop",
+        "honey_bottle"
+      ]
+    },
+    {
+      "statID": "drop.honey_block",
+      "minerl_keys": [
+        "drop",
+        "honey_block"
+      ]
+    },
+    {
+      "statID": "drop.honeycomb_block",
+      "minerl_keys": [
+        "drop",
+        "honeycomb_block"
+      ]
+    },
+    {
+      "statID": "drop.lodestone",
+      "minerl_keys": [
+        "drop",
+        "lodestone"
+      ]
+    },
+    {
+      "statID": "drop.netherite_block",
+      "minerl_keys": [
+        "drop",
+        "netherite_block"
+      ]
+    },
+    {
+      "statID": "drop.ancient_debris",
+      "minerl_keys": [
+        "drop",
+        "ancient_debris"
+      ]
+    },
+    {
+      "statID": "drop.target",
+      "minerl_keys": [
+        "drop",
+        "target"
+      ]
+    },
+    {
+      "statID": "drop.crying_obsidian",
+      "minerl_keys": [
+        "drop",
+        "crying_obsidian"
+      ]
+    },
+    {
+      "statID": "drop.blackstone",
+      "minerl_keys": [
+        "drop",
+        "blackstone"
+      ]
+    },
+    {
+      "statID": "drop.blackstone_slab",
+      "minerl_keys": [
+        "drop",
+        "blackstone_slab"
+      ]
+    },
+    {
+      "statID": "drop.blackstone_stairs",
+      "minerl_keys": [
+        "drop",
+        "blackstone_stairs"
+      ]
+    },
+    {
+      "statID": "drop.gilded_blackstone",
+      "minerl_keys": [
+        "drop",
+        "gilded_blackstone"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone_slab",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone_slab"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone_stairs",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone_stairs"
+      ]
+    },
+    {
+      "statID": "drop.chiseled_polished_blackstone",
+      "minerl_keys": [
+        "drop",
+        "chiseled_polished_blackstone"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone_bricks",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone_bricks"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone_brick_slab",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone_brick_slab"
+      ]
+    },
+    {
+      "statID": "drop.polished_blackstone_brick_stairs",
+      "minerl_keys": [
+        "drop",
+        "polished_blackstone_brick_stairs"
+      ]
+    },
+    {
+      "statID": "drop.cracked_polished_blackstone_bricks",
+      "minerl_keys": [
+        "drop",
+        "cracked_polished_blackstone_bricks"
+      ]
+    },
+    {
+      "statID": "drop.respawn_anchor",
+      "minerl_keys": [
+        "drop",
+        "respawn_anchor"
+      ]
+    },
+    {
+      "statID": "kill_entity.area_effect_cloud",
+      "minerl_keys": [
+        "kill_entity",
+        "area_effect_cloud"
+      ]
+    },
+    {
+      "statID": "kill_entity.armor_stand",
+      "minerl_keys": [
+        "kill_entity",
+        "armor_stand"
+      ]
+    },
+    {
+      "statID": "kill_entity.arrow",
+      "minerl_keys": [
+        "kill_entity",
+        "arrow"
+      ]
+    },
+    {
+      "statID": "kill_entity.bat",
+      "minerl_keys": [
+        "kill_entity",
+        "bat"
+      ]
+    },
+    {
+      "statID": "kill_entity.bee",
+      "minerl_keys": [
+        "kill_entity",
+        "bee"
+      ]
+    },
+    {
+      "statID": "kill_entity.blaze",
+      "minerl_keys": [
+        "kill_entity",
+        "blaze"
+      ]
+    },
+    {
+      "statID": "kill_entity.boat",
+      "minerl_keys": [
+        "kill_entity",
+        "boat"
+      ]
+    },
+    {
+      "statID": "kill_entity.cat",
+      "minerl_keys": [
+        "kill_entity",
+        "cat"
+      ]
+    },
+    {
+      "statID": "kill_entity.cave_spider",
+      "minerl_keys": [
+        "kill_entity",
+        "cave_spider"
+      ]
+    },
+    {
+      "statID": "kill_entity.chicken",
+      "minerl_keys": [
+        "kill_entity",
+        "chicken"
+      ]
+    },
+    {
+      "statID": "kill_entity.cod",
+      "minerl_keys": [
+        "kill_entity",
+        "cod"
+      ]
+    },
+    {
+      "statID": "kill_entity.cow",
+      "minerl_keys": [
+        "kill_entity",
+        "cow"
+      ]
+    },
+    {
+      "statID": "kill_entity.creeper",
+      "minerl_keys": [
+        "kill_entity",
+        "creeper"
+      ]
+    },
+    {
+      "statID": "kill_entity.dolphin",
+      "minerl_keys": [
+        "kill_entity",
+        "dolphin"
+      ]
+    },
+    {
+      "statID": "kill_entity.donkey",
+      "minerl_keys": [
+        "kill_entity",
+        "donkey"
+      ]
+    },
+    {
+      "statID": "kill_entity.dragon_fireball",
+      "minerl_keys": [
+        "kill_entity",
+        "dragon_fireball"
+      ]
+    },
+    {
+      "statID": "kill_entity.drowned",
+      "minerl_keys": [
+        "kill_entity",
+        "drowned"
+      ]
+    },
+    {
+      "statID": "kill_entity.elder_guardian",
+      "minerl_keys": [
+        "kill_entity",
+        "elder_guardian"
+      ]
+    },
+    {
+      "statID": "kill_entity.end_crystal",
+      "minerl_keys": [
+        "kill_entity",
+        "end_crystal"
+      ]
+    },
+    {
+      "statID": "kill_entity.ender_dragon",
+      "minerl_keys": [
+        "kill_entity",
+        "ender_dragon"
+      ]
+    },
+    {
+      "statID": "kill_entity.enderman",
+      "minerl_keys": [
+        "kill_entity",
+        "enderman"
+      ]
+    },
+    {
+      "statID": "kill_entity.endermite",
+      "minerl_keys": [
+        "kill_entity",
+        "endermite"
+      ]
+    },
+    {
+      "statID": "kill_entity.evoker",
+      "minerl_keys": [
+        "kill_entity",
+        "evoker"
+      ]
+    },
+    {
+      "statID": "kill_entity.evoker_fangs",
+      "minerl_keys": [
+        "kill_entity",
+        "evoker_fangs"
+      ]
+    },
+    {
+      "statID": "kill_entity.experience_orb",
+      "minerl_keys": [
+        "kill_entity",
+        "experience_orb"
+      ]
+    },
+    {
+      "statID": "kill_entity.eye_of_ender",
+      "minerl_keys": [
+        "kill_entity",
+        "eye_of_ender"
+      ]
+    },
+    {
+      "statID": "kill_entity.falling_block",
+      "minerl_keys": [
+        "kill_entity",
+        "falling_block"
+      ]
+    },
+    {
+      "statID": "kill_entity.firework_rocket",
+      "minerl_keys": [
+        "kill_entity",
+        "firework_rocket"
+      ]
+    },
+    {
+      "statID": "kill_entity.fox",
+      "minerl_keys": [
+        "kill_entity",
+        "fox"
+      ]
+    },
+    {
+      "statID": "kill_entity.ghast",
+      "minerl_keys": [
+        "kill_entity",
+        "ghast"
+      ]
+    },
+    {
+      "statID": "kill_entity.giant",
+      "minerl_keys": [
+        "kill_entity",
+        "giant"
+      ]
+    },
+    {
+      "statID": "kill_entity.guardian",
+      "minerl_keys": [
+        "kill_entity",
+        "guardian"
+      ]
+    },
+    {
+      "statID": "kill_entity.hoglin",
+      "minerl_keys": [
+        "kill_entity",
+        "hoglin"
+      ]
+    },
+    {
+      "statID": "kill_entity.horse",
+      "minerl_keys": [
+        "kill_entity",
+        "horse"
+      ]
+    },
+    {
+      "statID": "kill_entity.husk",
+      "minerl_keys": [
+        "kill_entity",
+        "husk"
+      ]
+    },
+    {
+      "statID": "kill_entity.illusioner",
+      "minerl_keys": [
+        "kill_entity",
+        "illusioner"
+      ]
+    },
+    {
+      "statID": "kill_entity.iron_golem",
+      "minerl_keys": [
+        "kill_entity",
+        "iron_golem"
+      ]
+    },
+    {
+      "statID": "kill_entity.item",
+      "minerl_keys": [
+        "kill_entity",
+        "item"
+      ]
+    },
+    {
+      "statID": "kill_entity.item_frame",
+      "minerl_keys": [
+        "kill_entity",
+        "item_frame"
+      ]
+    },
+    {
+      "statID": "kill_entity.fireball",
+      "minerl_keys": [
+        "kill_entity",
+        "fireball"
+      ]
+    },
+    {
+      "statID": "kill_entity.leash_knot",
+      "minerl_keys": [
+        "kill_entity",
+        "leash_knot"
+      ]
+    },
+    {
+      "statID": "kill_entity.lightning_bolt",
+      "minerl_keys": [
+        "kill_entity",
+        "lightning_bolt"
+      ]
+    },
+    {
+      "statID": "kill_entity.llama",
+      "minerl_keys": [
+        "kill_entity",
+        "llama"
+      ]
+    },
+    {
+      "statID": "kill_entity.llama_spit",
+      "minerl_keys": [
+        "kill_entity",
+        "llama_spit"
+      ]
+    },
+    {
+      "statID": "kill_entity.magma_cube",
+      "minerl_keys": [
+        "kill_entity",
+        "magma_cube"
+      ]
+    },
+    {
+      "statID": "kill_entity.minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.chest_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "chest_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.command_block_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "command_block_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.furnace_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "furnace_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.hopper_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "hopper_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.spawner_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "spawner_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.tnt_minecart",
+      "minerl_keys": [
+        "kill_entity",
+        "tnt_minecart"
+      ]
+    },
+    {
+      "statID": "kill_entity.mule",
+      "minerl_keys": [
+        "kill_entity",
+        "mule"
+      ]
+    },
+    {
+      "statID": "kill_entity.mooshroom",
+      "minerl_keys": [
+        "kill_entity",
+        "mooshroom"
+      ]
+    },
+    {
+      "statID": "kill_entity.ocelot",
+      "minerl_keys": [
+        "kill_entity",
+        "ocelot"
+      ]
+    },
+    {
+      "statID": "kill_entity.painting",
+      "minerl_keys": [
+        "kill_entity",
+        "painting"
+      ]
+    },
+    {
+      "statID": "kill_entity.panda",
+      "minerl_keys": [
+        "kill_entity",
+        "panda"
+      ]
+    },
+    {
+      "statID": "kill_entity.parrot",
+      "minerl_keys": [
+        "kill_entity",
+        "parrot"
+      ]
+    },
+    {
+      "statID": "kill_entity.phantom",
+      "minerl_keys": [
+        "kill_entity",
+        "phantom"
+      ]
+    },
+    {
+      "statID": "kill_entity.pig",
+      "minerl_keys": [
+        "kill_entity",
+        "pig"
+      ]
+    },
+    {
+      "statID": "kill_entity.piglin",
+      "minerl_keys": [
+        "kill_entity",
+        "piglin"
+      ]
+    },
+    {
+      "statID": "kill_entity.piglin_brute",
+      "minerl_keys": [
+        "kill_entity",
+        "piglin_brute"
+      ]
+    },
+    {
+      "statID": "kill_entity.pillager",
+      "minerl_keys": [
+        "kill_entity",
+        "pillager"
+      ]
+    },
+    {
+      "statID": "kill_entity.polar_bear",
+      "minerl_keys": [
+        "kill_entity",
+        "polar_bear"
+      ]
+    },
+    {
+      "statID": "kill_entity.tnt",
+      "minerl_keys": [
+        "kill_entity",
+        "tnt"
+      ]
+    },
+    {
+      "statID": "kill_entity.pufferfish",
+      "minerl_keys": [
+        "kill_entity",
+        "pufferfish"
+      ]
+    },
+    {
+      "statID": "kill_entity.rabbit",
+      "minerl_keys": [
+        "kill_entity",
+        "rabbit"
+      ]
+    },
+    {
+      "statID": "kill_entity.ravager",
+      "minerl_keys": [
+        "kill_entity",
+        "ravager"
+      ]
+    },
+    {
+      "statID": "kill_entity.salmon",
+      "minerl_keys": [
+        "kill_entity",
+        "salmon"
+      ]
+    },
+    {
+      "statID": "kill_entity.sheep",
+      "minerl_keys": [
+        "kill_entity",
+        "sheep"
+      ]
+    },
+    {
+      "statID": "kill_entity.shulker",
+      "minerl_keys": [
+        "kill_entity",
+        "shulker"
+      ]
+    },
+    {
+      "statID": "kill_entity.shulker_bullet",
+      "minerl_keys": [
+        "kill_entity",
+        "shulker_bullet"
+      ]
+    },
+    {
+      "statID": "kill_entity.silverfish",
+      "minerl_keys": [
+        "kill_entity",
+        "silverfish"
+      ]
+    },
+    {
+      "statID": "kill_entity.skeleton",
+      "minerl_keys": [
+        "kill_entity",
+        "skeleton"
+      ]
+    },
+    {
+      "statID": "kill_entity.skeleton_horse",
+      "minerl_keys": [
+        "kill_entity",
+        "skeleton_horse"
+      ]
+    },
+    {
+      "statID": "kill_entity.slime",
+      "minerl_keys": [
+        "kill_entity",
+        "slime"
+      ]
+    },
+    {
+      "statID": "kill_entity.small_fireball",
+      "minerl_keys": [
+        "kill_entity",
+        "small_fireball"
+      ]
+    },
+    {
+      "statID": "kill_entity.snow_golem",
+      "minerl_keys": [
+        "kill_entity",
+        "snow_golem"
+      ]
+    },
+    {
+      "statID": "kill_entity.snowball",
+      "minerl_keys": [
+        "kill_entity",
+        "snowball"
+      ]
+    },
+    {
+      "statID": "kill_entity.spectral_arrow",
+      "minerl_keys": [
+        "kill_entity",
+        "spectral_arrow"
+      ]
+    },
+    {
+      "statID": "kill_entity.spider",
+      "minerl_keys": [
+        "kill_entity",
+        "spider"
+      ]
+    },
+    {
+      "statID": "kill_entity.squid",
+      "minerl_keys": [
+        "kill_entity",
+        "squid"
+      ]
+    },
+    {
+      "statID": "kill_entity.stray",
+      "minerl_keys": [
+        "kill_entity",
+        "stray"
+      ]
+    },
+    {
+      "statID": "kill_entity.strider",
+      "minerl_keys": [
+        "kill_entity",
+        "strider"
+      ]
+    },
+    {
+      "statID": "kill_entity.egg",
+      "minerl_keys": [
+        "kill_entity",
+        "egg"
+      ]
+    },
+    {
+      "statID": "kill_entity.ender_pearl",
+      "minerl_keys": [
+        "kill_entity",
+        "ender_pearl"
+      ]
+    },
+    {
+      "statID": "kill_entity.experience_bottle",
+      "minerl_keys": [
+        "kill_entity",
+        "experience_bottle"
+      ]
+    },
+    {
+      "statID": "kill_entity.potion",
+      "minerl_keys": [
+        "kill_entity",
+        "potion"
+      ]
+    },
+    {
+      "statID": "kill_entity.trident",
+      "minerl_keys": [
+        "kill_entity",
+        "trident"
+      ]
+    },
+    {
+      "statID": "kill_entity.trader_llama",
+      "minerl_keys": [
+        "kill_entity",
+        "trader_llama"
+      ]
+    },
+    {
+      "statID": "kill_entity.tropical_fish",
+      "minerl_keys": [
+        "kill_entity",
+        "tropical_fish"
+      ]
+    },
+    {
+      "statID": "kill_entity.turtle",
+      "minerl_keys": [
+        "kill_entity",
+        "turtle"
+      ]
+    },
+    {
+      "statID": "kill_entity.vex",
+      "minerl_keys": [
+        "kill_entity",
+        "vex"
+      ]
+    },
+    {
+      "statID": "kill_entity.villager",
+      "minerl_keys": [
+        "kill_entity",
+        "villager"
+      ]
+    },
+    {
+      "statID": "kill_entity.vindicator",
+      "minerl_keys": [
+        "kill_entity",
+        "vindicator"
+      ]
+    },
+    {
+      "statID": "kill_entity.wandering_trader",
+      "minerl_keys": [
+        "kill_entity",
+        "wandering_trader"
+      ]
+    },
+    {
+      "statID": "kill_entity.witch",
+      "minerl_keys": [
+        "kill_entity",
+        "witch"
+      ]
+    },
+    {
+      "statID": "kill_entity.wither",
+      "minerl_keys": [
+        "kill_entity",
+        "wither"
+      ]
+    },
+    {
+      "statID": "kill_entity.wither_skeleton",
+      "minerl_keys": [
+        "kill_entity",
+        "wither_skeleton"
+      ]
+    },
+    {
+      "statID": "kill_entity.wither_skull",
+      "minerl_keys": [
+        "kill_entity",
+        "wither_skull"
+      ]
+    },
+    {
+      "statID": "kill_entity.wolf",
+      "minerl_keys": [
+        "kill_entity",
+        "wolf"
+      ]
+    },
+    {
+      "statID": "kill_entity.zoglin",
+      "minerl_keys": [
+        "kill_entity",
+        "zoglin"
+      ]
+    },
+    {
+      "statID": "kill_entity.zombie",
+      "minerl_keys": [
+        "kill_entity",
+        "zombie"
+      ]
+    },
+    {
+      "statID": "kill_entity.zombie_horse",
+      "minerl_keys": [
+        "kill_entity",
+        "zombie_horse"
+      ]
+    },
+    {
+      "statID": "kill_entity.zombie_villager",
+      "minerl_keys": [
+        "kill_entity",
+        "zombie_villager"
+      ]
+    },
+    {
+      "statID": "kill_entity.zombified_piglin",
+      "minerl_keys": [
+        "kill_entity",
+        "zombified_piglin"
+      ]
+    },
+    {
+      "statID": "kill_entity.player",
+      "minerl_keys": [
+        "kill_entity",
+        "player"
+      ]
+    },
+    {
+      "statID": "kill_entity.fishing_bobber",
+      "minerl_keys": [
+        "kill_entity",
+        "fishing_bobber"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.area_effect_cloud",
+      "minerl_keys": [
+        "entity_killed_by",
+        "area_effect_cloud"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.armor_stand",
+      "minerl_keys": [
+        "entity_killed_by",
+        "armor_stand"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.arrow",
+      "minerl_keys": [
+        "entity_killed_by",
+        "arrow"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.bat",
+      "minerl_keys": [
+        "entity_killed_by",
+        "bat"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.bee",
+      "minerl_keys": [
+        "entity_killed_by",
+        "bee"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.blaze",
+      "minerl_keys": [
+        "entity_killed_by",
+        "blaze"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.boat",
+      "minerl_keys": [
+        "entity_killed_by",
+        "boat"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.cat",
+      "minerl_keys": [
+        "entity_killed_by",
+        "cat"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.cave_spider",
+      "minerl_keys": [
+        "entity_killed_by",
+        "cave_spider"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.chicken",
+      "minerl_keys": [
+        "entity_killed_by",
+        "chicken"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.cod",
+      "minerl_keys": [
+        "entity_killed_by",
+        "cod"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.cow",
+      "minerl_keys": [
+        "entity_killed_by",
+        "cow"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.creeper",
+      "minerl_keys": [
+        "entity_killed_by",
+        "creeper"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.dolphin",
+      "minerl_keys": [
+        "entity_killed_by",
+        "dolphin"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.donkey",
+      "minerl_keys": [
+        "entity_killed_by",
+        "donkey"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.dragon_fireball",
+      "minerl_keys": [
+        "entity_killed_by",
+        "dragon_fireball"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.drowned",
+      "minerl_keys": [
+        "entity_killed_by",
+        "drowned"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.elder_guardian",
+      "minerl_keys": [
+        "entity_killed_by",
+        "elder_guardian"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.end_crystal",
+      "minerl_keys": [
+        "entity_killed_by",
+        "end_crystal"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.ender_dragon",
+      "minerl_keys": [
+        "entity_killed_by",
+        "ender_dragon"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.enderman",
+      "minerl_keys": [
+        "entity_killed_by",
+        "enderman"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.endermite",
+      "minerl_keys": [
+        "entity_killed_by",
+        "endermite"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.evoker",
+      "minerl_keys": [
+        "entity_killed_by",
+        "evoker"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.evoker_fangs",
+      "minerl_keys": [
+        "entity_killed_by",
+        "evoker_fangs"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.experience_orb",
+      "minerl_keys": [
+        "entity_killed_by",
+        "experience_orb"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.eye_of_ender",
+      "minerl_keys": [
+        "entity_killed_by",
+        "eye_of_ender"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.falling_block",
+      "minerl_keys": [
+        "entity_killed_by",
+        "falling_block"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.firework_rocket",
+      "minerl_keys": [
+        "entity_killed_by",
+        "firework_rocket"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.fox",
+      "minerl_keys": [
+        "entity_killed_by",
+        "fox"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.ghast",
+      "minerl_keys": [
+        "entity_killed_by",
+        "ghast"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.giant",
+      "minerl_keys": [
+        "entity_killed_by",
+        "giant"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.guardian",
+      "minerl_keys": [
+        "entity_killed_by",
+        "guardian"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.hoglin",
+      "minerl_keys": [
+        "entity_killed_by",
+        "hoglin"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.horse",
+      "minerl_keys": [
+        "entity_killed_by",
+        "horse"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.husk",
+      "minerl_keys": [
+        "entity_killed_by",
+        "husk"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.illusioner",
+      "minerl_keys": [
+        "entity_killed_by",
+        "illusioner"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.iron_golem",
+      "minerl_keys": [
+        "entity_killed_by",
+        "iron_golem"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.item",
+      "minerl_keys": [
+        "entity_killed_by",
+        "item"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.item_frame",
+      "minerl_keys": [
+        "entity_killed_by",
+        "item_frame"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.fireball",
+      "minerl_keys": [
+        "entity_killed_by",
+        "fireball"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.leash_knot",
+      "minerl_keys": [
+        "entity_killed_by",
+        "leash_knot"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.lightning_bolt",
+      "minerl_keys": [
+        "entity_killed_by",
+        "lightning_bolt"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.llama",
+      "minerl_keys": [
+        "entity_killed_by",
+        "llama"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.llama_spit",
+      "minerl_keys": [
+        "entity_killed_by",
+        "llama_spit"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.magma_cube",
+      "minerl_keys": [
+        "entity_killed_by",
+        "magma_cube"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.chest_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "chest_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.command_block_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "command_block_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.furnace_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "furnace_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.hopper_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "hopper_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.spawner_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "spawner_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.tnt_minecart",
+      "minerl_keys": [
+        "entity_killed_by",
+        "tnt_minecart"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.mule",
+      "minerl_keys": [
+        "entity_killed_by",
+        "mule"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.mooshroom",
+      "minerl_keys": [
+        "entity_killed_by",
+        "mooshroom"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.ocelot",
+      "minerl_keys": [
+        "entity_killed_by",
+        "ocelot"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.painting",
+      "minerl_keys": [
+        "entity_killed_by",
+        "painting"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.panda",
+      "minerl_keys": [
+        "entity_killed_by",
+        "panda"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.parrot",
+      "minerl_keys": [
+        "entity_killed_by",
+        "parrot"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.phantom",
+      "minerl_keys": [
+        "entity_killed_by",
+        "phantom"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.pig",
+      "minerl_keys": [
+        "entity_killed_by",
+        "pig"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.piglin",
+      "minerl_keys": [
+        "entity_killed_by",
+        "piglin"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.piglin_brute",
+      "minerl_keys": [
+        "entity_killed_by",
+        "piglin_brute"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.pillager",
+      "minerl_keys": [
+        "entity_killed_by",
+        "pillager"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.polar_bear",
+      "minerl_keys": [
+        "entity_killed_by",
+        "polar_bear"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.tnt",
+      "minerl_keys": [
+        "entity_killed_by",
+        "tnt"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.pufferfish",
+      "minerl_keys": [
+        "entity_killed_by",
+        "pufferfish"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.rabbit",
+      "minerl_keys": [
+        "entity_killed_by",
+        "rabbit"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.ravager",
+      "minerl_keys": [
+        "entity_killed_by",
+        "ravager"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.salmon",
+      "minerl_keys": [
+        "entity_killed_by",
+        "salmon"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.sheep",
+      "minerl_keys": [
+        "entity_killed_by",
+        "sheep"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.shulker",
+      "minerl_keys": [
+        "entity_killed_by",
+        "shulker"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.shulker_bullet",
+      "minerl_keys": [
+        "entity_killed_by",
+        "shulker_bullet"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.silverfish",
+      "minerl_keys": [
+        "entity_killed_by",
+        "silverfish"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.skeleton",
+      "minerl_keys": [
+        "entity_killed_by",
+        "skeleton"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.skeleton_horse",
+      "minerl_keys": [
+        "entity_killed_by",
+        "skeleton_horse"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.slime",
+      "minerl_keys": [
+        "entity_killed_by",
+        "slime"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.small_fireball",
+      "minerl_keys": [
+        "entity_killed_by",
+        "small_fireball"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.snow_golem",
+      "minerl_keys": [
+        "entity_killed_by",
+        "snow_golem"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.snowball",
+      "minerl_keys": [
+        "entity_killed_by",
+        "snowball"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.spectral_arrow",
+      "minerl_keys": [
+        "entity_killed_by",
+        "spectral_arrow"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.spider",
+      "minerl_keys": [
+        "entity_killed_by",
+        "spider"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.squid",
+      "minerl_keys": [
+        "entity_killed_by",
+        "squid"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.stray",
+      "minerl_keys": [
+        "entity_killed_by",
+        "stray"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.strider",
+      "minerl_keys": [
+        "entity_killed_by",
+        "strider"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.egg",
+      "minerl_keys": [
+        "entity_killed_by",
+        "egg"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.ender_pearl",
+      "minerl_keys": [
+        "entity_killed_by",
+        "ender_pearl"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.experience_bottle",
+      "minerl_keys": [
+        "entity_killed_by",
+        "experience_bottle"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.potion",
+      "minerl_keys": [
+        "entity_killed_by",
+        "potion"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.trident",
+      "minerl_keys": [
+        "entity_killed_by",
+        "trident"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.trader_llama",
+      "minerl_keys": [
+        "entity_killed_by",
+        "trader_llama"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.tropical_fish",
+      "minerl_keys": [
+        "entity_killed_by",
+        "tropical_fish"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.turtle",
+      "minerl_keys": [
+        "entity_killed_by",
+        "turtle"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.vex",
+      "minerl_keys": [
+        "entity_killed_by",
+        "vex"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.villager",
+      "minerl_keys": [
+        "entity_killed_by",
+        "villager"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.vindicator",
+      "minerl_keys": [
+        "entity_killed_by",
+        "vindicator"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.wandering_trader",
+      "minerl_keys": [
+        "entity_killed_by",
+        "wandering_trader"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.witch",
+      "minerl_keys": [
+        "entity_killed_by",
+        "witch"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.wither",
+      "minerl_keys": [
+        "entity_killed_by",
+        "wither"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.wither_skeleton",
+      "minerl_keys": [
+        "entity_killed_by",
+        "wither_skeleton"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.wither_skull",
+      "minerl_keys": [
+        "entity_killed_by",
+        "wither_skull"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.wolf",
+      "minerl_keys": [
+        "entity_killed_by",
+        "wolf"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.zoglin",
+      "minerl_keys": [
+        "entity_killed_by",
+        "zoglin"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.zombie",
+      "minerl_keys": [
+        "entity_killed_by",
+        "zombie"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.zombie_horse",
+      "minerl_keys": [
+        "entity_killed_by",
+        "zombie_horse"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.zombie_villager",
+      "minerl_keys": [
+        "entity_killed_by",
+        "zombie_villager"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.zombified_piglin",
+      "minerl_keys": [
+        "entity_killed_by",
+        "zombified_piglin"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.player",
+      "minerl_keys": [
+        "entity_killed_by",
+        "player"
+      ]
+    },
+    {
+      "statID": "entity_killed_by.fishing_bobber",
+      "minerl_keys": [
+        "entity_killed_by",
+        "fishing_bobber"
+      ]
+    },
+    {
+      "statID": "custom.leave_game",
+      "minerl_keys": [
+        "custom",
+        "leave_game"
+      ]
+    },
+    {
+      "statID": "custom.play_one_minute",
+      "minerl_keys": [
+        "custom",
+        "play_one_minute"
+      ]
+    },
+    {
+      "statID": "custom.time_since_death",
+      "minerl_keys": [
+        "custom",
+        "time_since_death"
+      ]
+    },
+    {
+      "statID": "custom.time_since_rest",
+      "minerl_keys": [
+        "custom",
+        "time_since_rest"
+      ]
+    },
+    {
+      "statID": "custom.sneak_time",
+      "minerl_keys": [
+        "custom",
+        "sneak_time"
+      ]
+    },
+    {
+      "statID": "custom.walk_one_cm",
+      "minerl_keys": [
+        "custom",
+        "walk_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.crouch_one_cm",
+      "minerl_keys": [
+        "custom",
+        "crouch_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.sprint_one_cm",
+      "minerl_keys": [
+        "custom",
+        "sprint_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.walk_on_water_one_cm",
+      "minerl_keys": [
+        "custom",
+        "walk_on_water_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.fall_one_cm",
+      "minerl_keys": [
+        "custom",
+        "fall_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.climb_one_cm",
+      "minerl_keys": [
+        "custom",
+        "climb_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.fly_one_cm",
+      "minerl_keys": [
+        "custom",
+        "fly_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.walk_under_water_one_cm",
+      "minerl_keys": [
+        "custom",
+        "walk_under_water_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.minecart_one_cm",
+      "minerl_keys": [
+        "custom",
+        "minecart_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.boat_one_cm",
+      "minerl_keys": [
+        "custom",
+        "boat_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.pig_one_cm",
+      "minerl_keys": [
+        "custom",
+        "pig_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.horse_one_cm",
+      "minerl_keys": [
+        "custom",
+        "horse_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.aviate_one_cm",
+      "minerl_keys": [
+        "custom",
+        "aviate_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.swim_one_cm",
+      "minerl_keys": [
+        "custom",
+        "swim_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.strider_one_cm",
+      "minerl_keys": [
+        "custom",
+        "strider_one_cm"
+      ]
+    },
+    {
+      "statID": "custom.jump",
+      "minerl_keys": [
+        "custom",
+        "jump"
+      ]
+    },
+    {
+      "statID": "custom.drop",
+      "minerl_keys": [
+        "custom",
+        "drop"
+      ]
+    },
+    {
+      "statID": "custom.damage_dealt",
+      "minerl_keys": [
+        "custom",
+        "damage_dealt"
+      ]
+    },
+    {
+      "statID": "custom.damage_dealt_absorbed",
+      "minerl_keys": [
+        "custom",
+        "damage_dealt_absorbed"
+      ]
+    },
+    {
+      "statID": "custom.damage_dealt_resisted",
+      "minerl_keys": [
+        "custom",
+        "damage_dealt_resisted"
+      ]
+    },
+    {
+      "statID": "custom.damage_taken",
+      "minerl_keys": [
+        "custom",
+        "damage_taken"
+      ]
+    },
+    {
+      "statID": "custom.damage_blocked_by_shield",
+      "minerl_keys": [
+        "custom",
+        "damage_blocked_by_shield"
+      ]
+    },
+    {
+      "statID": "custom.damage_absorbed",
+      "minerl_keys": [
+        "custom",
+        "damage_absorbed"
+      ]
+    },
+    {
+      "statID": "custom.damage_resisted",
+      "minerl_keys": [
+        "custom",
+        "damage_resisted"
+      ]
+    },
+    {
+      "statID": "custom.deaths",
+      "minerl_keys": [
+        "custom",
+        "deaths"
+      ]
+    },
+    {
+      "statID": "custom.mob_kills",
+      "minerl_keys": [
+        "custom",
+        "mob_kills"
+      ]
+    },
+    {
+      "statID": "custom.animals_bred",
+      "minerl_keys": [
+        "custom",
+        "animals_bred"
+      ]
+    },
+    {
+      "statID": "custom.player_kills",
+      "minerl_keys": [
+        "custom",
+        "player_kills"
+      ]
+    },
+    {
+      "statID": "custom.fish_caught",
+      "minerl_keys": [
+        "custom",
+        "fish_caught"
+      ]
+    },
+    {
+      "statID": "custom.talked_to_villager",
+      "minerl_keys": [
+        "custom",
+        "talked_to_villager"
+      ]
+    },
+    {
+      "statID": "custom.traded_with_villager",
+      "minerl_keys": [
+        "custom",
+        "traded_with_villager"
+      ]
+    },
+    {
+      "statID": "custom.eat_cake_slice",
+      "minerl_keys": [
+        "custom",
+        "eat_cake_slice"
+      ]
+    },
+    {
+      "statID": "custom.fill_cauldron",
+      "minerl_keys": [
+        "custom",
+        "fill_cauldron"
+      ]
+    },
+    {
+      "statID": "custom.use_cauldron",
+      "minerl_keys": [
+        "custom",
+        "use_cauldron"
+      ]
+    },
+    {
+      "statID": "custom.clean_armor",
+      "minerl_keys": [
+        "custom",
+        "clean_armor"
+      ]
+    },
+    {
+      "statID": "custom.clean_banner",
+      "minerl_keys": [
+        "custom",
+        "clean_banner"
+      ]
+    },
+    {
+      "statID": "custom.clean_shulker_box",
+      "minerl_keys": [
+        "custom",
+        "clean_shulker_box"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_brewingstand",
+      "minerl_keys": [
+        "custom",
+        "interact_with_brewingstand"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_beacon",
+      "minerl_keys": [
+        "custom",
+        "interact_with_beacon"
+      ]
+    },
+    {
+      "statID": "custom.inspect_dropper",
+      "minerl_keys": [
+        "custom",
+        "inspect_dropper"
+      ]
+    },
+    {
+      "statID": "custom.inspect_hopper",
+      "minerl_keys": [
+        "custom",
+        "inspect_hopper"
+      ]
+    },
+    {
+      "statID": "custom.inspect_dispenser",
+      "minerl_keys": [
+        "custom",
+        "inspect_dispenser"
+      ]
+    },
+    {
+      "statID": "custom.play_noteblock",
+      "minerl_keys": [
+        "custom",
+        "play_noteblock"
+      ]
+    },
+    {
+      "statID": "custom.tune_noteblock",
+      "minerl_keys": [
+        "custom",
+        "tune_noteblock"
+      ]
+    },
+    {
+      "statID": "custom.pot_flower",
+      "minerl_keys": [
+        "custom",
+        "pot_flower"
+      ]
+    },
+    {
+      "statID": "custom.trigger_trapped_chest",
+      "minerl_keys": [
+        "custom",
+        "trigger_trapped_chest"
+      ]
+    },
+    {
+      "statID": "custom.open_enderchest",
+      "minerl_keys": [
+        "custom",
+        "open_enderchest"
+      ]
+    },
+    {
+      "statID": "custom.enchant_item",
+      "minerl_keys": [
+        "custom",
+        "enchant_item"
+      ]
+    },
+    {
+      "statID": "custom.play_record",
+      "minerl_keys": [
+        "custom",
+        "play_record"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_furnace",
+      "minerl_keys": [
+        "custom",
+        "interact_with_furnace"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_crafting_table",
+      "minerl_keys": [
+        "custom",
+        "interact_with_crafting_table"
+      ]
+    },
+    {
+      "statID": "custom.open_chest",
+      "minerl_keys": [
+        "custom",
+        "open_chest"
+      ]
+    },
+    {
+      "statID": "custom.sleep_in_bed",
+      "minerl_keys": [
+        "custom",
+        "sleep_in_bed"
+      ]
+    },
+    {
+      "statID": "custom.open_shulker_box",
+      "minerl_keys": [
+        "custom",
+        "open_shulker_box"
+      ]
+    },
+    {
+      "statID": "custom.open_barrel",
+      "minerl_keys": [
+        "custom",
+        "open_barrel"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_blast_furnace",
+      "minerl_keys": [
+        "custom",
+        "interact_with_blast_furnace"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_smoker",
+      "minerl_keys": [
+        "custom",
+        "interact_with_smoker"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_lectern",
+      "minerl_keys": [
+        "custom",
+        "interact_with_lectern"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_campfire",
+      "minerl_keys": [
+        "custom",
+        "interact_with_campfire"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_cartography_table",
+      "minerl_keys": [
+        "custom",
+        "interact_with_cartography_table"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_loom",
+      "minerl_keys": [
+        "custom",
+        "interact_with_loom"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_stonecutter",
+      "minerl_keys": [
+        "custom",
+        "interact_with_stonecutter"
+      ]
+    },
+    {
+      "statID": "custom.bell_ring",
+      "minerl_keys": [
+        "custom",
+        "bell_ring"
+      ]
+    },
+    {
+      "statID": "custom.raid_trigger",
+      "minerl_keys": [
+        "custom",
+        "raid_trigger"
+      ]
+    },
+    {
+      "statID": "custom.raid_win",
+      "minerl_keys": [
+        "custom",
+        "raid_win"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_anvil",
+      "minerl_keys": [
+        "custom",
+        "interact_with_anvil"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_grindstone",
+      "minerl_keys": [
+        "custom",
+        "interact_with_grindstone"
+      ]
+    },
+    {
+      "statID": "custom.target_hit",
+      "minerl_keys": [
+        "custom",
+        "target_hit"
+      ]
+    },
+    {
+      "statID": "custom.interact_with_smithing_table",
+      "minerl_keys": [
+        "custom",
+        "interact_with_smithing_table"
+      ]
+    }
+  ]
+}

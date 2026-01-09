@@ -1,14 +1,14 @@
 '''
 Date: 2024-12-13 22:39:49
-
-LastEditTime: 2024-12-14 02:39:14
+LastEditors: caishaofei-mus1 1744260356@qq.com
+LastEditTime: 2025-02-13 20:00:03
 FilePath: /MineStudio/minestudio/tutorials/inference/evaluate_groot/main.py
 '''
 from minestudio.simulator import MinecraftSim
-from minestudio.simulator.callbacks import RecordCallback, SpeedTestCallback, CommandsCallback, DemonstrationCallback
+from minestudio.simulator.callbacks import SpeedTestCallback, load_callbacks_from_config
 from minestudio.models import GrootPolicy, load_groot_policy
-from minestudio.MCU_benchmark.utility.read_conf import convert_yaml_to_callbacks
 from minestudio.inference import EpisodePipeline, MineGenerator, InfoBaseFilter
+from minestudio.benchmark import prepare_task_configs
 
 import ray
 import numpy as np
@@ -19,50 +19,41 @@ from rich import print
 
 if __name__ == '__main__':
     ray.init()
-
-    resolution = (224, 224)
-    
-    file_path = "../../../benchmark/task_configs/simple/collect_wood.yaml"
-    commands, task = convert_yaml_to_callbacks(file_path)
-    print(f'Task: {task}')
-    print(f'Init commands: {commands}')
+    task_configs = prepare_task_configs("simple", path="CraftJarvis/MineStudio_task_group.simple")
+    config_file = task_configs["collect_wood"] 
+    # you can try: survive_plant, collect_wood, build_pillar, ... ; make sure the config file contains `reference_video` field 
+    print(config_file)
 
     env_generator = partial(
         MinecraftSim,
-        obs_size = resolution,
+        obs_size = (224, 224),
         preferred_spawn_biome = "forest", 
         callbacks = [
-            RecordCallback(record_path = "./output", fps = 30, frame_type="pov"),
             SpeedTestCallback(50),
-            CommandsCallback(commands),
-            DemonstrationCallback("collect_wood")
-        ]
+        ] + load_callbacks_from_config(config_file)
     )
 
-    agent_generator = partial(
-        load_groot_policy,
-        ckpt_path = None
-    )
+    agent_generator = lambda: GrootPolicy.from_pretrained("CraftJarvis/MineStudio_GROOT.18w_EMA")
 
     worker_kwargs = dict(
         env_generator=env_generator, 
         agent_generator=agent_generator,
-        num_max_steps=1200,
-        num_episodes=2,
+        num_max_steps=600,
+        num_episodes=1,
         tmpdir="./output",
         image_media="h264",
     )
 
     pipeline = EpisodePipeline(
         episode_generator=MineGenerator(
-            num_workers=4,
+            num_workers=1, 
             num_gpus=0.25,
             max_restarts=3,
             **worker_kwargs, 
         ), 
         episode_filter=InfoBaseFilter(
             key="mine_block",
-            val="oak_log",
+            regex=".*log.*",
             num=1,
         ),
     )

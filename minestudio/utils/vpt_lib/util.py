@@ -26,11 +26,14 @@ class FiLMBlock(nn.Module):
         super().__init__()
         self.fc = nn.Linear(hidsize, 2*hidsize)
         self.ff = FeedForward(hidsize, mult = 2)
+        self.norm = nn.LayerNorm(hidsize)
     
     def forward(self, x, z):
         z = self.ff(z) + z
         gamma, beta = self.fc(z).chunk(2, dim=-1)
-        return x * (1 + gamma) + beta
+        y = x * (1 + gamma) + beta
+        y = self.norm(y) #! LayerNorm after FiLM
+        return y
 
 
 class AdaLNBlock(nn.Module):

@@ -54,9 +54,10 @@ class Registers():  # pylint: disable=invalid-name, too-few-public-methods
     def __init__(self):
         raise RuntimeError("Registries is not intended to be instantiated")
 
-    # 可以初始化多个注册器
     model = Register('model')
     model_loader = Register('model_loader')
+    simulator_callback = Register('simulator_callback')
+    modal_kernel_callback = Register('modal_kernel_callback')
 
 
 def sub_modules(root):
@@ -66,13 +67,6 @@ def sub_modules(root):
         if sub[0].isupper():
             sub_module.append('{}.{}'.format(sub, sub[0].lower() + sub[1:]))
     return sub_module
-
-
-# 此处获取所有算法路径,
-# MODULES_BASE = "../models"
-# SUB_MODULES = sub_modules(MODULES_BASE)
-# ALL_MODULES = [(MODULES_BASE, SUB_MODULES)]
-
 
 def _handle_errors(errors):
     """Log out and possibly reraise errors during import."""

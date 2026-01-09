@@ -1,6 +1,6 @@
 '''
 Date: 2024-11-11 05:00:34
-
+LastEditors: caishaofei caishaofei@stu.pku.edu.cn
 LastEditTime: 2024-11-11 05:02:29
 FilePath: /MineStudio/minestudio/simulator/minerl/herobraine/env_specs/equip_weapon_specs.py
 '''

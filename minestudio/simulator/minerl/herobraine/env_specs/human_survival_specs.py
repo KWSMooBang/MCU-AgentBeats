@@ -42,6 +42,7 @@ class HumanSurvival(HumanControlEnvSpec):
             handlers.ObserveFromFullStats("craft_item"),
             handlers.ObserveFromFullStats("mine_block"),
             handlers.ObserveFromFullStats("damage_dealt"),
+            handlers.ObserveFromFullStats("custom"),
             # handlers.ObserveFromFullStats("entity_killed_by"),
             handlers.ObserveFromFullStats("kill_entity"),
             # handlers.ObserveFromFullStats(None),

@@ -99,11 +99,11 @@ def build_sam2_camera_predictor(
             "++model.fill_hole_area=8",
         ]
     hydra_overrides.extend(hydra_overrides_extra)
-    #!  modify begin
+    #! caishaofei modify begin
     hydra.core.global_hydra.GlobalHydra.instance().clear()
     config_path = "./sam2_configs"
     initialize(config_path=config_path, version_base='1.3')
-    #!  modify end
+    #! caishaofei modify end
     # Read config and init model
     cfg = compose(config_name=config_file, overrides=hydra_overrides)
     OmegaConf.resolve(cfg)

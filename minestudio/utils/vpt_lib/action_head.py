@@ -1,6 +1,6 @@
 import random
 import logging
-from typing import Any, Tuple, Dict, Union
+from typing import Any, Tuple, Dict, Union, Optional
 
 import numpy as np
 import torch
@@ -15,54 +15,118 @@ from gym3.types import DictType, Discrete, Real, TensorType, ValType
 LOG0 = -100
 
 def fan_in_linear(module: nn.Module, scale=1.0, bias=True):
-    """Fan-in init"""
+    """
+    Initializes the weights of a linear module using fan-in initialization.
+    The weights are scaled by `scale / norm`, where norm is the L2 norm of the weights.
+    Biases are initialized to zero if `bias` is True.
+
+    :param module: The linear module to initialize.
+    :type module: nn.Module
+    :param scale: The scaling factor for the weights.
+    :type scale: float
+    :param bias: Whether to initialize biases to zero.
+    :type bias: bool
+    """
     module.weight.data *= scale / module.weight.norm(dim=1, p=2, keepdim=True)
 
     if bias:
         module.bias.data *= 0
 
 class ActionHead(nn.Module):
-    """Abstract base class for action heads compatible with forc"""
+    """
+    Abstract base class for action heads.
+    Action heads are responsible for converting network outputs into action probability distributions
+    and providing methods for sampling, calculating log probabilities, entropy, and KL divergence.
+    """
 
     def forward(self, input_data, **kwargs) -> Any:
         """
-        Just a forward pass through this head
-        :returns pd_params - parameters describing the probability distribution
+        Performs a forward pass through the action head.
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param \\*\\*kwargs: Additional keyword arguments.
+        :returns: Parameters describing the probability distribution of actions.
+        :rtype: Any
+        :raises NotImplementedError: This method must be implemented by subclasses.
         """
         raise NotImplementedError
 
     def logprob(self, action_sample, pd_params, **kwargs):
-        """Logartithm of probability of sampling `action_sample` from a probability described by `pd_params`"""
+        """
+        Calculates the logarithm of the probability of sampling `action_sample`
+        from a probability distribution described by `pd_params`.
+
+        :param action_sample: The sampled action.
+        :type action_sample: Any
+        :param pd_params: Parameters describing the probability distribution.
+        :type pd_params: Any
+        :param \\*\\*kwargs: Additional keyword arguments.
+        :returns: The log probability of the action sample.
+        :rtype: torch.Tensor
+        :raises NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError
 
     def entropy(self, pd_params):
-        """Entropy of this distribution"""
+        """
+        Calculates the entropy of the probability distribution described by `pd_params`.
+
+        :param pd_params: Parameters describing the probability distribution.
+        :type pd_params: Any
+        :returns: The entropy of the distribution.
+        :rtype: torch.Tensor
+        :raises NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError
 
     def sample(self, pd_params, deterministic: bool = False) -> Any:
         """
-        Draw a sample from probability distribution given by those params
+        Draws a sample from the probability distribution given by `pd_params`.
 
-        :param pd_params Parameters of a probability distribution
-        :param deterministic Whether to return a stochastic sample or deterministic mode of a distribution
+        :param pd_params: Parameters of a probability distribution.
+        :type pd_params: Any
+        :param deterministic: Whether to return a stochastic sample or the deterministic mode of the distribution.
+        :type deterministic: bool
+        :returns: A sampled action.
+        :rtype: Any
+        :raises NotImplementedError: This method must be implemented by subclasses.
         """
         raise NotImplementedError
 
     def kl_divergence(self, params_q, params_p):
-        """KL divergence between two distribution described by these two params"""
+        """
+        Calculates the KL divergence between two distributions described by `params_q` and `params_p`.
+        KL(Q || P).
+
+        :param params_q: Parameters of the first distribution (Q).
+        :type params_q: Any
+        :param params_p: Parameters of the second distribution (P).
+        :type params_p: Any
+        :returns: The KL divergence between the two distributions.
+        :rtype: torch.Tensor
+        :raises NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError
 
 
 class DiagGaussianActionHead(ActionHead):
     """
-    Action head where actions are normally distributed uncorrelated variables with specific means and variances.
-
-    Means are calculated directly from the network while standard deviations are a parameter of this module
+    Action head for normally distributed, uncorrelated continuous actions.
+    Means are predicted by a linear layer, while standard deviations are learnable parameters.
     """
 
     LOG2PI = np.log(2.0 * np.pi)
 
     def __init__(self, input_dim: int, num_dimensions: int):
+        """
+        Initializes the DiagGaussianActionHead.
+
+        :param input_dim: The dimensionality of the input features.
+        :type input_dim: int
+        :param num_dimensions: The number of dimensions of the action space.
+        :type num_dimensions: int
+        """
         super().__init__()
 
         self.input_dim = input_dim
@@ -72,10 +136,24 @@ class DiagGaussianActionHead(ActionHead):
         self.log_std = nn.Parameter(torch.zeros(num_dimensions), requires_grad=True)
 
     def reset_parameters(self):
+        """Initializes the weights of the linear layer and biases."""
         init.orthogonal_(self.linear_layer.weight, gain=0.01)
         init.constant_(self.linear_layer.bias, 0.0)
 
     def forward(self, input_data: torch.Tensor, mask=None, **kwargs) -> torch.Tensor:
+        """
+        Computes the means and log standard deviations of the Gaussian distribution.
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param mask: An optional mask (not used in this head).
+        :type mask: Optional[torch.Tensor]
+        :param \\*\\*kwargs: Additional keyword arguments.
+        :returns: A tensor where the last dimension contains means and log_stds.
+                  Shape: (..., num_dimensions, 2)
+        :rtype: torch.Tensor
+        :raises AssertionError: If a mask is provided.
+        """
         assert not mask, "Can not use a mask in a gaussian action head"
         means = self.linear_layer(input_data)
         # Unsqueeze many times to get to the same shape
@@ -86,7 +164,18 @@ class DiagGaussianActionHead(ActionHead):
         return torch.stack([mean_view, logstd], dim=-1)
 
     def logprob(self, action_sample: torch.Tensor, pd_params: torch.Tensor) -> torch.Tensor:
-        """Log-likelihood"""
+        """
+        Calculates the log-likelihood of `action_sample` given the distribution parameters.
+        The distribution is a multivariate Gaussian with a diagonal covariance matrix.
+
+        :param action_sample: The sampled actions. Shape: (..., num_dimensions)
+        :type action_sample: torch.Tensor
+        :param pd_params: Parameters of the Gaussian distribution (means and log_stds).
+                          Shape: (..., num_dimensions, 2)
+        :type pd_params: torch.Tensor
+        :returns: The log probability of the action samples. Shape: (...)
+        :rtype: torch.Tensor
+        """
         means = pd_params[..., 0]
         log_std = pd_params[..., 1]
 
@@ -98,13 +187,31 @@ class DiagGaussianActionHead(ActionHead):
 
     def entropy(self, pd_params: torch.Tensor) -> torch.Tensor:
         """
-        Categorical distribution entropy calculation - sum probs * log(probs).
-        In case of diagonal gaussian distribution - 1/2 log(2 pi e sigma^2)
+        Calculates the entropy of the Gaussian distribution.
+        For a diagonal Gaussian, entropy is 0.5 * sum(log(2 * pi * e * sigma_i^2)).
+
+        :param pd_params: Parameters of the Gaussian distribution (means and log_stds).
+                          Shape: (..., num_dimensions, 2)
+        :type pd_params: torch.Tensor
+        :returns: The entropy of the distribution. Shape: (...)
+        :rtype: torch.Tensor
         """
         log_std = pd_params[..., 1]
         return (log_std + 0.5 * (self.LOG2PI + 1)).sum(dim=-1)
 
     def sample(self, pd_params: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
+        """
+        Samples an action from the Gaussian distribution.
+
+        :param pd_params: Parameters of the Gaussian distribution (means and log_stds).
+                          Shape: (..., num_dimensions, 2)
+        :type pd_params: torch.Tensor
+        :param deterministic: If True, returns the mean (mode) of the distribution.
+                              If False, returns a stochastic sample.
+        :type deterministic: bool
+        :returns: A sampled action. Shape: (..., num_dimensions)
+        :rtype: torch.Tensor
+        """
         means = pd_params[..., 0]
         log_std = pd_params[..., 1]
 
@@ -115,11 +222,17 @@ class DiagGaussianActionHead(ActionHead):
 
     def kl_divergence(self, params_q: torch.Tensor, params_p: torch.Tensor) -> torch.Tensor:
         """
-        Categorical distribution KL divergence calculation
-        KL(Q || P) = sum Q_i log (Q_i / P_i)
+        Calculates the KL divergence KL(Q || P) between two diagonal Gaussian distributions Q and P.
+        Formula: log(sigma_p/sigma_q) + (sigma_q^2 + (mu_q - mu_p)^2) / (2 * sigma_p^2) - 0.5, summed over dimensions.
 
-        Formula is:
-        log(sigma_p) - log(sigma_q) + (sigma_q^2 + (mu_q - mu_p)^2))/(2 * sigma_p^2)
+        :param params_q: Parameters of the first Gaussian distribution Q (means_q, log_std_q).
+                         Shape: (..., num_dimensions, 2)
+        :type params_q: torch.Tensor
+        :param params_p: Parameters of the second Gaussian distribution P (means_p, log_std_p).
+                         Shape: (..., num_dimensions, 2)
+        :type params_p: torch.Tensor
+        :returns: The KL divergence. Shape: (..., 1)
+        :rtype: torch.Tensor
         """
         means_q = params_q[..., 0]
         log_std_q = params_q[..., 1]
@@ -136,17 +249,47 @@ class DiagGaussianActionHead(ActionHead):
 
 
 class CategoricalActionHead(ActionHead):
-    """Action head with categorical actions"""
+    """
+    Action head for categorical (discrete) actions.
+    It uses a linear layer to produce logits for each action.
+    Supports temperature scaling and nucleus sampling.
+    """
 
     def __init__(
-        self, input_dim: int, shape: Tuple[int], num_actions: int, builtin_linear_layer: bool = True, temperature: float = 1.0
+        self,
+        input_dim: int,
+        shape: Tuple[int],
+        num_actions: int,
+        builtin_linear_layer: bool = True,
+        temperature: float = 1.0,
+        nucleus_prob: Optional[float] = None,
     ):
+        """
+        Initializes the CategoricalActionHead.
+
+        :param input_dim: The dimensionality of the input features.
+        :type input_dim: int
+        :param shape: The shape of the action space, excluding the number of actions dimension.
+                      For example, if action space is (H, W, num_actions), shape is (H, W).
+        :type shape: Tuple[int]
+        :param num_actions: The number of possible discrete actions.
+        :type num_actions: int
+        :param builtin_linear_layer: Whether to include a linear layer to map input_dim to num_actions.
+                                     If False, input_dim must equal num_actions.
+        :type builtin_linear_layer: bool
+        :param temperature: Temperature for scaling logits before softmax. Higher temperature -> softer distribution.
+        :type temperature: float
+        :param nucleus_prob: Probability threshold for nucleus sampling. If None, vanilla sampling is used.
+        :type nucleus_prob: Optional[float]
+        :raises AssertionError: If `builtin_linear_layer` is False and `input_dim` != `num_actions`.
+        """
         super().__init__()
 
         self.input_dim = input_dim
         self.num_actions = num_actions
         self.output_shape = shape + (num_actions,)
         self.temperature = temperature
+        self.nucleus_prob = nucleus_prob
 
         if builtin_linear_layer:
             self.linear_layer = nn.Linear(input_dim, np.prod(self.output_shape))
@@ -157,12 +300,26 @@ class CategoricalActionHead(ActionHead):
             self.linear_layer = None
 
     def reset_parameters(self):
+        """Initializes the weights of the linear layer (if it exists) and biases."""
         if self.linear_layer is not None:
             init.orthogonal_(self.linear_layer.weight, gain=0.01)
             init.constant_(self.linear_layer.bias, 0.0)
-            finit.fan_in_linear(self.linear_layer, scale=0.01)
+            fan_in_linear(self.linear_layer, scale=0.01) # Corrected: removed finit prefix
 
     def forward(self, input_data: torch.Tensor, mask=None, **kwargs) -> Any:
+        """
+        Computes the log probabilities (logits) for each action.
+        Applies temperature scaling and masking if provided.
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param mask: An optional boolean mask. Logits for masked-out actions are set to a very small number (LOG0).
+                     Shape should be broadcastable to the logits shape before the num_actions dimension.
+        :type mask: Optional[torch.Tensor]
+        :param \\*\\*kwargs: Additional keyword arguments.
+        :returns: Logits for each action after processing. Shape: (..., *self.output_shape)
+        :rtype: torch.Tensor
+        """
         if self.linear_layer is not None:
             flat_out = self.linear_layer(input_data)
         else:
@@ -176,6 +333,20 @@ class CategoricalActionHead(ActionHead):
         return F.log_softmax(shaped_out.float(), dim=-1)
 
     def logprob(self, actions: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+        """
+        Calculates the log probability of the given `actions` based on the `logits`.
+        It gathers the log probabilities corresponding to the chosen actions and sums them
+        if the action space has multiple dimensions (e.g., for MultiDiscrete).
+
+        :param actions: The sampled actions. Expected to be long type.
+                        Shape: (..., *self.output_shape[:-1])
+        :type actions: torch.Tensor
+        :param logits: The log probabilities (output of the forward pass).
+                       Shape: (..., *self.output_shape)
+        :type logits: torch.Tensor
+        :returns: The sum of log probabilities for the chosen actions. Shape: (...)
+        :rtype: torch.Tensor
+        """
         value = actions.long().unsqueeze(-1)
         value, log_pmf = torch.broadcast_tensors(value, logits)
         value = value[..., :1]
@@ -186,7 +357,17 @@ class CategoricalActionHead(ActionHead):
         return result
 
     def entropy(self, logits: torch.Tensor) -> torch.Tensor:
-        """Categorical distribution entropy calculation - sum probs * log(probs)"""
+        """
+        Calculates the entropy of the categorical distribution defined by `logits`.
+        Entropy = - sum(probs * log_probs).
+        The result is summed if the action space has multiple dimensions.
+
+        :param logits: The log probabilities (output of the forward pass).
+                       Shape: (..., *self.output_shape)
+        :type logits: torch.Tensor
+        :returns: The entropy of the distribution. Shape: (...)
+        :rtype: torch.Tensor
+        """
         probs = torch.exp(logits)
         entropy = -torch.sum(probs * logits, dim=-1)
         # entropy is per-entry, still of size self.output_shape[:-1]; we need to reduce of the rest of it.
@@ -195,8 +376,21 @@ class CategoricalActionHead(ActionHead):
         return entropy
 
     # minecraft domain should directly use this sample function
-    def sample(self, logits: torch.Tensor, deterministic: bool = False, **kwargs) -> Any:
-        """The original sample function from VPT library. """
+    def vanilla_sample(self, logits: torch.Tensor, deterministic: bool = False, **kwargs) -> Any:
+        """
+        Samples an action from the categorical distribution using the Gumbel-Max trick for stochastic sampling,
+        or argmax for deterministic sampling. This is the original sampling method from the VPT library.
+
+        :param logits: The log probabilities for each action.
+                       Shape: (..., *self.output_shape)
+        :type logits: torch.Tensor
+        :param deterministic: If True, returns the action with the highest logit (argmax).
+                              If False, returns a stochastic sample using Gumbel-Max.
+        :type deterministic: bool
+        :param \\*\\*kwargs: Additional keyword arguments (not used).
+        :returns: A sampled action. Shape: (..., *self.output_shape[:-1])
+        :rtype: torch.Tensor
+        """
         if deterministic:
             return torch.argmax(logits, dim=-1)
         else:
@@ -211,30 +405,71 @@ class CategoricalActionHead(ActionHead):
             
             return torch.argmax(logits - torch.log(-torch.log(u)), dim=-1)
     
-    # def sample(self, logits: torch.Tensor, deterministic: bool = False, p: float = 0.85, **kwargs) -> Any:
-    #     """The nucleus sample function. """
-    #     # assert not deterministic, "Not deterministic"
-    #     if random.randint(0, 99) < 5 or deterministic:
-    #         # this is to introduce some randomness to avoid deterministic behavior
-    #         return self.vanilla_sample(logits, deterministic)
-    #     probs = torch.exp(logits)
-    #     sorted_probs, indices = torch.sort(probs, dim=-1, descending=True)
-    #     cum_sum_probs = torch.cumsum(sorted_probs, dim=-1) 
-    #     # print(f"{p = }, {cum_sum_probs = }")
-    #     nucleus = cum_sum_probs < p 
-    #     nucleus = torch.cat([nucleus.new_ones(nucleus.shape[:-1] + (1,)), nucleus[..., :-1]], dim=-1)
-    #     sorted_log_probs = torch.log(sorted_probs)
-    #     sorted_log_probs[~nucleus] = float('-inf')
-    #     sampled_sorted_indexes = self.vanilla_sample(sorted_log_probs, deterministic=False)
-    #     res = indices.gather(-1, sampled_sorted_indexes.unsqueeze(-1))
-    #     return res.squeeze(-1)
+    def nucleus_sample(self, logits: torch.Tensor, deterministic: bool = False, p: float = 0.85, **kwargs) -> Any:
+        """
+        Samples an action using nucleus (top-p) sampling.
+        It considers the smallest set of actions whose cumulative probability exceeds `p`.
+        If deterministic, falls back to vanilla sampling with determinism.
+
+        :param logits: The log probabilities for each action.
+                       Shape: (..., *self.output_shape)
+        :type logits: torch.Tensor
+        :param deterministic: If True, uses vanilla deterministic sampling.
+        :type deterministic: bool
+        :param p: The cumulative probability threshold for nucleus sampling.
+        :type p: float
+        :param \\*\\*kwargs: Additional keyword arguments (passed to vanilla_sample if deterministic).
+        :returns: A sampled action. Shape: (..., *self.output_shape[:-1])
+        :rtype: torch.Tensor
+        """
+        if deterministic:
+            return self.vanilla_sample(logits, deterministic)
+        probs = torch.exp(logits)
+        sorted_probs, indices = torch.sort(probs, dim=-1, descending=True)
+        cum_sum_probs = torch.cumsum(sorted_probs, dim=-1) 
+        nucleus = cum_sum_probs < p 
+        nucleus = torch.cat([nucleus.new_ones(nucleus.shape[:-1] + (1,)), nucleus[..., :-1]], dim=-1)
+        sorted_log_probs = torch.log(sorted_probs)
+        sorted_log_probs[~nucleus] = float('-inf')
+        sampled_sorted_indexes = self.vanilla_sample(sorted_log_probs, deterministic=False)
+        res = indices.gather(-1, sampled_sorted_indexes.unsqueeze(-1))
+        return res.squeeze(-1)
+
+    def sample(self, logits: torch.Tensor, deterministic: bool = False, **kwargs) -> Any:
+        """
+        Samples an action from the categorical distribution.
+        Uses nucleus sampling if `self.nucleus_prob` is set, otherwise uses vanilla sampling.
+
+        :param logits: The log probabilities for each action.
+                       Shape: (..., *self.output_shape)
+        :type logits: torch.Tensor
+        :param deterministic: If True, returns the most likely action.
+                              If False, returns a stochastic sample.
+        :type deterministic: bool
+        :param \\*\\*kwargs: Additional keyword arguments for the specific sampling method.
+        :returns: A sampled action. Shape: (..., *self.output_shape[:-1])
+        :rtype: torch.Tensor
+        """
+        if self.nucleus_prob is None:
+            return self.vanilla_sample(logits, deterministic, **kwargs)
+        else:
+            return self.nucleus_sample(logits, deterministic, p=self.nucleus_prob, **kwargs)
 
     def kl_divergence(self, logits_q: torch.Tensor, logits_p: torch.Tensor) -> torch.Tensor:
         """
-        Categorical distribution KL divergence calculation
-        KL(Q || P) = sum Q_i log (Q_i / P_i)
-        When talking about logits this is:
-        sum exp(Q_i) * (Q_i - P_i)
+        Calculates the KL divergence KL(Q || P) between two categorical distributions Q and P,
+        defined by their logits.
+        Formula: sum(exp(Q_i) * (Q_i - P_i)).
+        The result is summed if the action space has multiple dimensions.
+
+        :param logits_q: Logits of the first distribution Q.
+                         Shape: (..., *self.output_shape)
+        :type logits_q: torch.Tensor
+        :param logits_p: Logits of the second distribution P.
+                         Shape: (..., *self.output_shape)
+        :type logits_p: torch.Tensor
+        :returns: The KL divergence. Shape: (..., 1)
+        :rtype: torch.Tensor
         """
         kl = (torch.exp(logits_q) * (logits_q - logits_p)).sum(-1, keepdim=True)
         # kl is per-entry, still of size self.output_shape; we need to reduce of the rest of it.
@@ -242,76 +477,22 @@ class CategoricalActionHead(ActionHead):
             kl = kl.sum(dim=-2)  # dim=-2 because we use keepdim=True above.
         return kl
 
-class HLGaussActionHead(ActionHead):
-    
-    def __init__(
-        self, 
-        input_dim: int, 
-        num_dimensions: int, 
-        min_value: float, 
-        max_value: float, 
-        num_bins: int, 
-        sigma: float = 1.0
-    ):
-        super().__init__()
-        self.input_dim = input_dim
-        self.num_dimensions = num_dimensions
-        self.min_value = min_value
-        self.max_value = max_value
-        self.num_bins = num_bins
-        self.sigma = sigma
-        self.support = nn.Parameter(
-            torch.linspace(
-                min_value, max_value, num_bins + 1, dtype=torch.float32
-            ), requires_grad=False
-        )
-        self.linear_layer = nn.Linear(input_dim, num_dimensions * num_bins)
-
-    def reset_parameters(self):
-        init.orthogonal_(self.linear_layer.weight, gain=0.01)
-        init.constant_(self.linear_layer.bias, 0.0)
-    
-    def forward(self, input_data: torch.Tensor, mask=None, **kwargs) -> torch.Tensor:
-        assert not mask, "Can not use a mask in a gaussian action head"
-        logits = self.linear_layer(input_data).reshape(input_data.shape[:-1] + (self.num_dimensions, self.num_bins))
-        return logits 
-
-    def logprob(self, action_sample: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
-        '''
-        :param action_sample: B, T, D
-        :param logits: B, T, D, X
-        :return: B, T
-        '''
-        B, T = action_sample.shape[:2]
-        target = self.transform_to_probs(action_sample) # B, T, D, X
-        # remove nan elements (because of large action labels)
-        target[torch.isnan(target)] = 0.
-        lp = (target * F.log_softmax(logits, dim=-1)).sum([-1, -2]) # (B, T)
-        return lp
-    
-    def sample(self, logits: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
-        '''
-        :param logits: B, T, D, X
-        :return: B, T, D
-        '''
-        return self.transform_from_probs(F.softmax(logits, dim=-1))
-
-    def transform_to_probs(self, target: torch.Tensor) -> torch.Tensor:
-        cdf_evals = torch.special.erf(
-            (self.support - target.unsqueeze(-1))
-            / (torch.sqrt(torch.tensor(2.0)) * self.sigma)
-        )
-        z = cdf_evals[..., -1] - cdf_evals[..., 0]
-        bin_probs = cdf_evals[..., 1:] - cdf_evals[..., :-1]
-        return bin_probs / z.unsqueeze(-1)
-    
-    def transform_from_probs(self, probs: torch.Tensor) -> torch.Tensor:
-        centers = (self.support[:-1] + self.support[1:]) / 2
-        return torch.sum(probs * centers, dim=-1)
-
 class MSEActionHead(ActionHead):
+    """
+    Action head for continuous actions where the loss is Mean Squared Error (MSE)
+    between the predicted actions (means) and the target actions.
+    This head essentially predicts the mean of a distribution with fixed, infinitesimal variance.
+    """
 
     def __init__(self, input_dim: int, num_dimensions: int):
+        """
+        Initializes the MSEActionHead.
+
+        :param input_dim: The dimensionality of the input features.
+        :type input_dim: int
+        :param num_dimensions: The number of dimensions of the action space.
+        :type num_dimensions: int
+        """
         super().__init__()
 
         self.input_dim = input_dim
@@ -320,66 +501,189 @@ class MSEActionHead(ActionHead):
         self.linear_layer = nn.Linear(input_dim, num_dimensions)
 
     def reset_parameters(self):
+        """Initializes the weights of the linear layer and biases."""
         init.orthogonal_(self.linear_layer.weight, gain=0.01)
         init.constant_(self.linear_layer.bias, 0.0)
 
     def forward(self, input_data: torch.Tensor, mask=None, **kwargs) -> torch.Tensor:
+        """
+        Computes the predicted mean actions using a linear layer.
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param mask: An optional mask (not used in this head).
+        :type mask: Optional[torch.Tensor]
+        :param \\*\\*kwargs: Additional keyword arguments.
+        :returns: The predicted mean actions. Shape: (..., num_dimensions)
+        :rtype: torch.Tensor
+        :raises AssertionError: If a mask is provided.
+        """
         assert not mask, "Can not use a mask in a mse action head"
         means = self.linear_layer(input_data)
 
         return means
 
     def logprob(self, action_sample: torch.Tensor, pd_params: torch.Tensor) -> torch.Tensor:
+        """
+        Calculates a pseudo log-probability, which is the negative squared error.
+        This is not a true log-probability but is used for compatibility in some RL frameworks.
+
+        :param action_sample: The target actions. Shape: (..., num_dimensions)
+        :type action_sample: torch.Tensor
+        :param pd_params: The predicted mean actions (output of the forward pass).
+                          Shape: (..., num_dimensions)
+        :type pd_params: torch.Tensor
+        :returns: The negative sum of squared errors. Shape: (...)
+        :rtype: torch.Tensor
+        """
         return - ((action_sample - pd_params).pow(2)).sum(dim=-1)
 
     def entropy(self, pd_params: torch.Tensor) -> torch.Tensor:
-        # raise NotImplementedError("Entropy is not defined for MSE action head")
+        """
+        Returns zero entropy, as this head represents a deterministic prediction (delta distribution).
+
+        :param pd_params: The predicted mean actions.
+        :type pd_params: torch.Tensor
+        :returns: A tensor of zeros with the same batch shape as pd_params. Shape: (...)
+        :rtype: torch.Tensor
+        """
         return torch.zeros_like(pd_params).sum(dim=-1)
 
     def sample(self, pd_params: torch.Tensor, deterministic: bool = False, **kwargs) -> torch.Tensor:
+        """
+        Returns the predicted mean actions, as this head is deterministic.
+
+        :param pd_params: The predicted mean actions (output of the forward pass).
+                          Shape: (..., num_dimensions)
+        :type pd_params: torch.Tensor
+        :param deterministic: Ignored, as sampling is always deterministic.
+        :type deterministic: bool
+        :param \\*\\*kwargs: Additional keyword arguments (not used).
+        :returns: The predicted mean actions. Shape: (..., num_dimensions)
+        :rtype: torch.Tensor
+        """
         return pd_params
 
     def kl_divergence(self, params_q: torch.Tensor, params_p: torch.Tensor) -> torch.Tensor:
+        """
+        KL divergence is not well-defined for this action head in a general sense
+        as it represents a delta distribution.
+
+        :param params_q: Parameters of the first distribution.
+        :type params_q: torch.Tensor
+        :param params_p: Parameters of the second distribution.
+        :type params_p: torch.Tensor
+        :raises NotImplementedError: This method is not implemented.
+        """
         raise NotImplementedError("KL divergence is not defined for MSE action head")
 
 class TupleActionHead(nn.ModuleList, ActionHead):
-    """Action head with multiple sub-actions"""
+    """
+    An action head that combines multiple sub-action heads, where actions are structured as a tuple.
+    Each element of the tuple corresponds to an action from a sub-head.
+    Inherits from `nn.ModuleList` to manage sub-heads and `ActionHead` for the interface.
+    """
 
     def reset_parameters(self):
+        """Calls `reset_parameters` on each sub-head."""
         for subhead in self:
             subhead.reset_parameters()
-    
+
     def forward(self, input_data: torch.Tensor, **kwargs) -> Any:
-        return tuple([ subhead(input_data) for subhead in self ])
+        """
+        Passes the input data through each sub-head and returns a tuple of their outputs.
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param \\*\\*kwargs: Additional keyword arguments (passed to each sub-head).
+        :returns: A tuple where each element is the output (pd_params) of a sub-head.
+        :rtype: Tuple[Any, ...]
+        """
+        return tuple([ subhead(input_data, **kwargs) for subhead in self ]) # Added **kwargs
 
     def logprob(self, actions: Tuple[torch.Tensor], logits: Tuple[torch.Tensor]) -> torch.Tensor:
+        """
+        Calculates the log probability for each action in the tuple using the corresponding sub-head
+        and its logits. Returns a tuple of log probabilities.
+
+        :param actions: A tuple of sampled actions, one for each sub-head.
+        :type actions: Tuple[torch.Tensor, ...]
+        :param logits: A tuple of probability distribution parameters (e.g., logits) from each sub-head.
+        :type logits: Tuple[torch.Tensor, ...]
+        :returns: A tuple of log probabilities, one for each sub-action.
+        :rtype: Tuple[torch.Tensor, ...]
+        """
         return tuple([ subhead.logprob(actions[k], logits[k]) for k, subhead in enumerate(self) ])
 
     def sample(self, logits: Tuple[torch.Tensor], deterministic: bool = False) -> Any:
+        """
+        Samples an action from each sub-head and returns a tuple of these actions.
+
+        :param logits: A tuple of probability distribution parameters from each sub-head.
+        :type logits: Tuple[torch.Tensor, ...]
+        :param deterministic: Whether to perform deterministic sampling for each sub-head.
+        :type deterministic: bool
+        :returns: A tuple of sampled actions.
+        :rtype: Tuple[Any, ...]
+        """
         return tuple([ subhead.sample(logits[k], deterministic) for k, subhead in enumerate(self) ])
 
     def entropy(self, logits: Tuple[torch.Tensor]) -> torch.Tensor:
+        """
+        Calculates the entropy for each sub-distribution and returns a tuple of entropies.
+
+        :param logits: A tuple of probability distribution parameters from each sub-head.
+        :type logits: Tuple[torch.Tensor, ...]
+        :returns: A tuple of entropies, one for each sub-distribution.
+        :rtype: Tuple[torch.Tensor, ...]
+        """
         return tuple([ subhead.entropy(logits[k]) for k, subhead in enumerate(self) ])
 
     def kl_divergence(self, logits_q: Tuple[torch.Tensor], logits_p: Tuple[torch.Tensor]) -> torch.Tensor:
+        """
+        Calculates the KL divergence for each pair of sub-distributions (Q_k || P_k)
+        and returns their sum.
+
+        :param logits_q: A tuple of parameters for the first set of distributions (Q).
+        :type logits_q: Tuple[torch.Tensor, ...]
+        :param logits_p: A tuple of parameters for the second set of distributions (P).
+        :type logits_p: Tuple[torch.Tensor, ...]
+        :returns: The sum of KL divergences from all sub-heads.
+        :rtype: torch.Tensor
+        """
         return sum( subhead.kl_divergence(logits_q[k], logits_p[k]) for k, subhead in enumerate(self) )
 
 class DictActionHead(nn.ModuleDict, ActionHead):
-    """Action head with multiple sub-actions"""
+    """
+    An action head that combines multiple sub-action heads, where actions are structured as a dictionary.
+    Each key-value pair in the dictionary corresponds to an action from a named sub-head.
+    Inherits from `nn.ModuleDict` to manage sub-heads and `ActionHead` for the interface.
+    """
 
     def reset_parameters(self):
+        """Calls `reset_parameters` on each sub-head in the dictionary."""
         for subhead in self.values():
             subhead.reset_parameters()
 
     def forward(self, input_data: torch.Tensor, **kwargs) -> Any:
         """
-        :param kwargs: each kwarg should be a dict with keys corresponding to self.keys()
-                e.g. if this ModuleDict has submodules keyed by 'A', 'B', and 'C', we could call:
-                    forward(input_data, foo={'A': True, 'C': False}, bar={'A': 7}}
-                Then children will be called with:
-                    A: forward(input_data, foo=True, bar=7)
-                    B: forward(input_data)
-                    C: forward(input_Data, foo=False)
+        Passes input data through each sub-head. Allows passing specific keyword arguments
+        to individual sub-heads based on their keys.
+
+        Example:
+        If this ModuleDict has submodules keyed by 'A', 'B', and 'C', we could call:
+        `forward(input_data, foo={'A': True, 'C': False}, bar={'A': 7})`
+        Then children will be called with:
+            A: `subhead_A(input_data, foo=True, bar=7)`
+            B: `subhead_B(input_data)`
+            C: `subhead_C(input_data, foo=False)`
+
+        :param input_data: The input tensor from the policy network.
+        :type input_data: torch.Tensor
+        :param \\*\\*kwargs: Keyword arguments. If a kwarg's value is a dictionary, its items
+                             are passed to sub-heads matching the keys.
+        :returns: A dictionary where keys are sub-head names and values are their outputs (pd_params).
+        :rtype: Dict[str, Any]
         """
         result = {}
         for head_name, subhead in self.items():
@@ -391,299 +695,114 @@ class DictActionHead(nn.ModuleDict, ActionHead):
             result[head_name] = subhead(input_data, **head_kwargs)
         return result
 
-    def logprob(self, actions: Dict[str, torch.Tensor], logits: Dict[str, torch.Tensor], return_dict=False) -> torch.Tensor:
+    def logprob(self, actions: Dict[str, torch.Tensor], logits: Dict[str, torch.Tensor], return_dict=False) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Calculates log probabilities for actions from each sub-head.
+        Can return a dictionary of log probabilities or their sum.
+
+        :param actions: A dictionary of sampled actions, keyed by sub-head name.
+        :type actions: Dict[str, torch.Tensor]
+        :param logits: A dictionary of pd_params from each sub-head, keyed by sub-head name.
+        :type logits: Dict[str, torch.Tensor]
+        :param return_dict: If True, returns a dictionary of log probabilities.
+                            If False, returns the sum of log probabilities.
+        :type return_dict: bool
+        :returns: Either a sum of log probabilities (Tensor) or a dictionary of log probabilities.
+        :rtype: Union[torch.Tensor, Dict[str, torch.Tensor]]
+        """
         if return_dict:
             return {k: subhead.logprob(actions[k], logits[k]) for k, subhead in self.items()}
         else:
             return sum(subhead.logprob(actions[k], logits[k]) for k, subhead in self.items())
 
     def sample(self, logits: Dict[str, torch.Tensor], deterministic: bool = False) -> Any:
+        """
+        Samples an action from each sub-head and returns a dictionary of these actions.
+
+        :param logits: A dictionary of pd_params from each sub-head, keyed by sub-head name.
+        :type logits: Dict[str, torch.Tensor]
+        :param deterministic: Whether to perform deterministic sampling for each sub-head.
+        :type deterministic: bool
+        :returns: A dictionary of sampled actions, keyed by sub-head name.
+        :rtype: Dict[str, Any]
+        """
         return {k: subhead.sample(logits[k], deterministic) for k, subhead in self.items()}
 
-    def entropy(self, logits: Dict[str, torch.Tensor], return_dict=False) -> torch.Tensor:
+    def entropy(self, logits: Dict[str, torch.Tensor], return_dict=False) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Calculates the entropy for each sub-distribution.
+        Can return a dictionary of entropies or their sum.
+
+        :param logits: A dictionary of pd_params from each sub-head, keyed by sub-head name.
+        :type logits: Dict[str, torch.Tensor]
+        :param return_dict: If True, returns a dictionary of entropies.
+                            If False, returns the sum of entropies.
+        :type return_dict: bool
+        :returns: Either a sum of entropies (Tensor) or a dictionary of entropies.
+        :rtype: Union[torch.Tensor, Dict[str, torch.Tensor]]
+        """
         if return_dict:
             return {k: subhead.entropy(logits[k]) for k, subhead in self.items()}
         else:
             return sum(subhead.entropy(logits[k]) for k, subhead in self.items())
 
     def kl_divergence(self, logits_q: Dict[str, torch.Tensor], logits_p: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """
+        Calculates the KL divergence for each pair of sub-distributions (Q_k || P_k)
+        and returns their sum.
+
+        :param logits_q: A dictionary of parameters for the first set of distributions (Q).
+        :type logits_q: Dict[str, torch.Tensor]
+        :param logits_p: A dictionary of parameters for the second set of distributions (P).
+        :type logits_p: Dict[str, torch.Tensor]
+        :returns: The sum of KL divergences from all sub-heads.
+        :rtype: torch.Tensor
+        """
         return sum(subhead.kl_divergence(logits_q[k], logits_p[k]) for k, subhead in self.items())
 
-class DLMLActionHead(ActionHead):
-
-    def __init__(self, 
-        input_dim: int, 
-        num_dimensions: int, 
-        num_mixtures: int, 
-        num_output_bins: int, 
-        output_min: float, 
-        output_max: float,
-        log_scale_min: float
-    ):
-        super().__init__()
-
-        self.input_dim = input_dim
-        self.num_dimensions = num_dimensions
-        self.num_mixtures = num_mixtures
-        self.num_output_bins = num_output_bins
-        self.output_min = output_min
-        self.output_max = output_max
-        self.log_scale_min = log_scale_min
-
-        self.fc_mixture_logits = nn.Linear(input_dim, num_mixtures)
-        self.fc_means = nn.Linear(input_dim, num_dimensions * num_mixtures)
-        self.fc_log_scales = nn.Linear(input_dim, num_dimensions * num_mixtures)
-
-    def reset_parameters(self):
-        pass
-
-    def forward(self, input_data: torch.Tensor, mask=None, **kwargs) -> Dict[str, torch.Tensor]:
-        assert not mask, "Can not use a mask in a mse action head"
-        mixture_logits = self.fc_mixture_logits(input_data)
-        means = self.fc_means(input_data)
-        log_scales = self.fc_log_scales(input_data)
-        log_scales = torch.clamp(log_scales, min=self.log_scale_min)
-        return {"mixture_logits": mixture_logits, "means": means, "log_scales": log_scales}
-    
-    def _normalize(self, input_data: torch.Tensor) -> torch.Tensor:
-        #  [output_min, output_max] -> [-1, 1]
-        return 2 * (input_data - self.output_min) / (self.output_max - self.output_min) - 1
-    
-    def _denormalize(self, input_data: torch.Tensor) -> torch.Tensor:
-        #  [-1, 1] -> [output_min, output_max]
-        return (input_data + 1) * (self.output_max - self.output_min) / 2 + self.output_min
-
-    def logprob(self, action_sample, pd_params, **kwargs):
-        assert len (action_sample.shape) == 3 # B, T, D
-
-        action_sample = self._normalize(action_sample)
-
-        if action_sample.max() > 1.0 or action_sample.min() < -1.0:
-            rich.print("[bold red]Action sample out of range, clipping to [-1, 1][/bold red]")
-            action_sample = torch.clamp(action_sample, -1.0, 1.0)
-            
-        mixture_logits = pd_params["mixture_logits"] # B, T, K
-        means = pd_params["means"].reshape(action_sample.shape[0], action_sample.shape[1], self.num_dimensions, self.num_mixtures) # B, T, D, K
-        log_scales = pd_params["log_scales"].reshape(action_sample.shape[0], action_sample.shape[1], self.num_dimensions, self.num_mixtures) # B, T, D, K
-
-        centered_action = action_sample.unsqueeze(-1) - means # B, T, D, K
-        inv_stdv = torch.exp(-log_scales) # B, T, D, K
-
-        plus_in = inv_stdv * (centered_action + 1. / (self.num_output_bins - 1))
-        cdf_plus = torch.sigmoid(plus_in)
-        min_in = inv_stdv * (centered_action - 1. / (self.num_output_bins - 1))
-        cdf_min = torch.sigmoid(min_in)
-        log_cdf_plus = plus_in - torch.nn.functional.softplus(plus_in) # log probability for edge case of 0 (before scaling)
-        log_one_minus_cdf_min = - torch.nn.functional.softplus(min_in) # log probability for edge case of 255 (before scaling)
-        cdf_delta = cdf_plus - cdf_min # probability for all other cases
-        mid_in = inv_stdv * centered_action
-        log_pdf_mid = mid_in - log_scales - 2. * torch.nn.functional.softplus(mid_in) # log probability in the center of the bin, to be used in extreme cases (not actually used in our code)
-        action_sample_expanded = action_sample.unsqueeze(-1).expand_as(means)
-        log_probs = torch.where(
-            action_sample_expanded < -0.999, log_cdf_plus, 
-            torch.where(
-                action_sample_expanded > 0.999, log_one_minus_cdf_min, 
-                torch.where(cdf_delta > 1e-5, torch.log(torch.clamp_min(cdf_delta, 1e-12)), log_pdf_mid - np.log((self.num_output_bins - 1) / 2.0)
-            )
-        )) # type: ignore
-
-        log_probs = log_probs.sum(-2) + torch.log_softmax(mixture_logits, dim=-1) # B, T, K
-        return torch.logsumexp(log_probs, dim=-1) # B, T
-
-    def entropy(self, pd_params) -> torch.Tensor:
-        return torch.full_like(pd_params['mixture_logits'], torch.nan).sum(dim=-1)
-
-    def sample(self, pd_params, deterministic: bool = False, **kwargs) -> torch.Tensor:
-        if len (pd_params["means"].shape) < 3:
-            cnt = 0
-            while len (pd_params["means"].shape) < 3:
-                pd_params = {k: v.unsqueeze(0) for k, v in pd_params.items()}
-                cnt += 1
-            ret = self.sample(pd_params, deterministic)
-            for _ in range(cnt):
-                ret = ret.squeeze(0)
-            return ret
-
-        assert len (pd_params["means"].shape) == 3 # B, T, D * K
-
-        means = pd_params["means"].reshape(pd_params["means"].shape[0], pd_params["means"].shape[1], self.num_dimensions, self.num_mixtures) # B, T, D, K
-        mixture_logits = pd_params["mixture_logits"] # B, T, K
-        log_scales = pd_params["log_scales"].reshape(pd_params["log_scales"].shape[0], pd_params["log_scales"].shape[1], self.num_dimensions, self.num_mixtures) # B, T, D, K
-
-        if deterministic:
-            mixture_argmax = torch.argmax(mixture_logits, dim=-1) # B, T
-            sampled_output = torch.gather(means, -1, mixture_argmax.unsqueeze(-1).expand(-1, -1, self.num_dimensions).unsqueeze(-1)).squeeze(-1) # B, T, D
-        else :
-            mixture_sample = torch.distributions.Categorical(logits=mixture_logits).sample()
-            means_sample = torch.gather(means, -1, mixture_sample.unsqueeze(-1).expand(-1, -1, self.num_dimensions).unsqueeze(-1)).squeeze(-1) # B, T, D
-            log_scales_sample = torch.gather(log_scales, -1, mixture_sample.unsqueeze(-1).expand(-1, -1, self.num_dimensions).unsqueeze(-1)).squeeze(-1) # B, T, D
-
-            base_distribution = torch.distributions.Uniform(torch.zeros_like(means_sample), torch.ones_like(means_sample))
-            transforms = [torch.distributions.SigmoidTransform().inv, torch.distributions.AffineTransform(loc=means_sample, scale=torch.exp(log_scales_sample))]
-            logistic = torch.distributions.TransformedDistribution(base_distribution, transforms)
-
-            sampled_output = logistic.rsample() # B, T, D
-    
-        return self._denormalize(sampled_output)
-
-    def kl_divergence(self, params_q: torch.Tensor, params_p: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError("KL divergence is not defined for MSE action head")
-
-class JointActionHead(ActionHead):
-    """Action head with joint action space"""
-
-    def __init__(
-        self, input_dim: int, shape: Tuple[int], num_actions: int, temperature: float = 1.0
-    ):
-        super().__init__()
-
-        self.input_dim = input_dim
-        self.num_actions = num_actions
-        self.output_shape = shape + (num_actions,)
-        self.temperature = temperature
-
-        assert len(shape) == 1, "Only 1D action spaces are supported when using JointActionSpace"
-        self.embedding_layer = nn.Embedding(num_actions, input_dim)
-        self.recurrent_layer = nn.GRU(input_dim, input_dim, num_layers=2, batch_first=True, dropout=0.5)
-        self.linear_layer = nn.Linear(input_dim, num_actions)
-        Console().log("[NOTICE] Using JointActionHead...")
-
-    def reset_parameters(self):
-        ...
-
-    def forward(self, input_data: torch.Tensor, mask=None, actions=None, **kwargs) -> Any:
-        
-        # input_data: shape BxTxD
-        # actions: shape BxTx7
-        cod_feats = rearrange(input_data, 'b t d -> (b t) 1 d')
-        act_feats = self.embedding_layer(actions) # BxTx7xD
-        act_feats = rearrange(act_feats, 'b t n d -> (b t) n d') 
-        inp_feats = torch.cat([cod_feats, act_feats[:, :-1, :]], dim=1)
-        opt_feats, _ = self.recurrent_layer(inp_feats)
-        opt_feats = self.linear_layer(opt_feats) # generate action logits
-        
-        shaped_opt = rearrange(opt_feats, '(b t) n d -> b t n d', b=input_data.shape[0], t=input_data.shape[1])
-        shaped_opt = shaped_opt / self.temperature # remove the first timestep
-        if mask is not None:
-            shaped_opt[~mask] = LOG0
-        # Convert to float32 to avoid RuntimeError: "log_softmax_lastdim_kernel_impl" not implemented for 'Half'
-        return F.log_softmax(shaped_opt.float(), dim=-1)
-
-    def logprob(self, actions: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
-        value = actions.long().unsqueeze(-1)
-        value, log_pmf = torch.broadcast_tensors(value, logits)
-        value = value[..., :1]
-        result = log_pmf.gather(-1, value).squeeze(-1)
-        # result is per-entry, still of size self.output_shape[:-1]; we need to reduce of the rest of it.
-        for _ in self.output_shape[:-1]:
-            result = result.sum(dim=-1)
-        return result
-
-    def entropy(self, logits: torch.Tensor) -> torch.Tensor:
-        """Categorical distribution entropy calculation - sum probs * log(probs)"""
-        probs = torch.exp(logits)
-        entropy = -torch.sum(probs * logits, dim=-1)
-        # entropy is per-entry, still of size self.output_shape[:-1]; we need to reduce of the rest of it.
-        for _ in self.output_shape[:-1]:
-            entropy = entropy.sum(dim=-1)
-        return entropy
-
-    def sample(self, logits: torch.Tensor, pi_latent: torch.Tensor, deterministic: bool = False, **kwargs) -> Any:
-        logits = None # we do not use the passed logits outside
-        B, T = pi_latent.shape[:2]
-        result = []
-        input_feats = rearrange(pi_latent, "b t d -> (b t) 1 d")
-        memory = None
-        for i in range(self.output_shape[0]):
-            logit_feats, memory = self.recurrent_layer(input_feats, memory)
-            logits = self.linear_layer(logit_feats)
-            if deterministic:
-                next_token = torch.argmax(logits, dim=-1)
-            else:
-                logits = torch.nn.functional.log_softmax(logits, dim=-1)
-                u = torch.rand_like(logits)
-                u[u == 1.0] = 0.999
-                next_token = torch.argmax(logits - torch.log(-torch.log(u)), dim=-1)
-            result += [next_token]
-            input_feats = self.embedding_layer(next_token)
-        actions = rearrange(torch.cat(result, dim=1), "(b t) n -> b t n", b=B, t=T)
-        return actions
-    
-    def kl_divergence(self, logits_q: torch.Tensor, logits_p: torch.Tensor) -> torch.Tensor:
-        """
-        Categorical distribution KL divergence calculation
-        KL(Q || P) = sum Q_i log (Q_i / P_i)
-        When talking about logits this is:
-        sum exp(Q_i) * (Q_i - P_i)
-        """
-        kl = (torch.exp(logits_q) * (logits_q - logits_p)).sum(-1, keepdim=True)
-        # kl is per-entry, still of size self.output_shape; we need to reduce of the rest of it.
-        for _ in self.output_shape[:-1]:
-            kl = kl.sum(dim=-2)  # dim=-2 because we use keepdim=True above.
-        return kl
-
-
 def make_action_head(ac_space: ValType, pi_out_size: int, temperature: float = 1.0, **kwargs):
-    """Helper function to create an action head corresponding to the environment action space"""
+    """
+    Helper function to create an appropriate action head based on the action space type.
+    Supports `gymnasium.spaces` and some `gym.spaces`.
+
+    :param ac_space: The action space of the environment.
+    :type ac_space: Union[gymnasium.spaces.Space, gym.spaces.Space, ValType]
+    :param pi_out_size: The output size of the policy network feature extractor.
+    :type pi_out_size: int
+    :param temperature: Temperature for categorical action heads.
+    :type temperature: float
+    :param \\*\\*kwargs: Additional keyword arguments to pass to the action head constructor.
+    :returns: An initialized action head.
+    :rtype: ActionHead
+    :raises NotImplementedError: If the action space type is not supported.
+    """
     if isinstance(ac_space, gymnasium.spaces.MultiDiscrete):
-        head_type = kwargs.get('type', 'independent').lower()
-        if head_type == 'independent' or head_type == 'mse': #! mse is debug only
-            return CategoricalActionHead(pi_out_size, ac_space.shape, ac_space.nvec[0].item(), temperature=temperature)
-        elif head_type == 'joint':
-            return JointActionHead(pi_out_size, ac_space.shape, ac_space.nvec[0].item(), temperature=temperature)
-        else:
-            raise NotImplementedError(f"Action head type {head_type} is not supported")
+        return CategoricalActionHead(pi_out_size, ac_space.shape, ac_space.nvec[0].item(), temperature=temperature, **kwargs)
     elif isinstance(ac_space, gymnasium.spaces.Dict):
-        return DictActionHead({k: make_action_head(v, pi_out_size, temperature) for k, v in ac_space.items()})
+        return DictActionHead({k: make_action_head(v, pi_out_size, temperature, **kwargs) for k, v in ac_space.items()})
     elif isinstance(ac_space, gymnasium.spaces.Tuple):
-        return TupleActionHead([make_action_head(v, pi_out_size, temperature) for v in ac_space])
+        return TupleActionHead([make_action_head(v, pi_out_size, temperature, **kwargs) for v in ac_space])
     elif isinstance(ac_space, gym.spaces.Discrete):
-        return CategoricalActionHead(pi_out_size, ac_space.shape, ac_space.n, temperature=temperature)
+        return CategoricalActionHead(pi_out_size, ac_space.shape, ac_space.n, temperature=temperature, **kwargs)
     elif isinstance(ac_space, gym.spaces.Box) or isinstance(ac_space, gymnasium.spaces.Box):
         assert len(ac_space.shape) == 1, "Nontrivial shapes not yet implemented."
-        head_type = kwargs.get('type', 'mse').lower()
-        if head_type == 'mse':
-            return MSEActionHead(pi_out_size, ac_space.shape[0])
-        elif head_type == 'dlml':
-            return DLMLActionHead(pi_out_size, ac_space.shape[0], **kwargs['dlml_kwargs'])
-        else:
-            raise NotImplementedError(f"Action head type {head_type} is not supported")
-        # return DLMLActionHead(pi_out_size, ac_space.shape[0], **kwargs['dlml_kwargs'])
-        # return MSEActionHead(pi_out_size, ac_space.shape[0])
-        # return DiagGaussianActionHead(pi_out_size, ac_space.shape[0])
-        # return HLGaussActionHead(pi_out_size, ac_space.shape[0], **kwargs['hl_gauss_kwargs'])
-
+        return MSEActionHead(pi_out_size, ac_space.shape[0], **kwargs)
     raise NotImplementedError(f"Action space of type {type(ac_space)} is not supported")
 
 # def make_action_head(ac_space: ValType, pi_out_size: int, temperature: float = 1.0):
-#     """Helper function to create an action head corresponding to the environment action space"""
-#     if isinstance(ac_space, TensorType):
-#         if isinstance(ac_space.eltype, Discrete):
-#             return CategoricalActionHead(pi_out_size, ac_space.shape, ac_space.eltype.n, temperature=temperature)
-#         elif isinstance(ac_space.eltype, Real):
-#             if temperature != 1.0:
-#                 logging.warning("Non-1 temperature not implemented for DiagGaussianActionHead.")
-#             assert len(ac_space.shape) == 1, "Nontrivial shapes not yet implemented."
-#             return DiagGaussianActionHead(pi_out_size, ac_space.shape[0])
-#     elif isinstance(ac_space, DictType):
-#         return DictActionHead({k: make_action_head(v, pi_out_size, temperature) for k, v in ac_space.items()})
-        
-#     raise NotImplementedError(f"Action space of type {type(ac_space)} is not supported")
+# """
+# Helper function to create an action head corresponding to the environment action space (gym3.types version).
 
-if __name__ == '__main__':
-    import ipdb
-    import d4rl_atari
-    
-    env = gym.make("breakout-expert-v0")
-    action_space = env.action_space
-    
-    action_head = make_action_head(action_space, 1024)
-    
-    g = torch.tensor([action_space.sample(), action_space.sample()])
-    x = torch.rand((2, 1024))
-    y = action_head(x)
-    log_prob = action_head.logprob(g, y)
-    ipdb.set_trace()
-    
-    
-    
+# :param ac_space: The action space of the environment, typically from gym3.
+# :type ac_space: ValType
+# :param pi_out_size: The output size of the policy network feature extractor.
+# :type pi_out_size: int
+# :param temperature: Temperature for categorical action heads.
+# :type temperature: float
+# :returns: An initialized action head.
+# :rtype: ActionHead
+# :raises NotImplementedError: If the action space type is not supported.
+# :raises AssertionError: If conditions for specific heads are not met (e.g., shape for DiagGaussian).
+# """
+
+

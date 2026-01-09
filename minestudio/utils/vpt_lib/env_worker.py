@@ -133,7 +133,7 @@ class EnvWorker(mp.Process):
                         info = info,
                     )
                     # import json
-                    # with open("/home//Desktop/info.json", "wb") as f:
+                    # with open("/home/caishaofei/Desktop/info.json", "wb") as f:
                     #     json.dump(f, info)
                     # exit()
                     time_step += 1

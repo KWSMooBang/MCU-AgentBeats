@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import torch
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
 
@@ -15,10 +14,26 @@ from minestudio.utils.mineclip_lib.mineclip import MineCLIP
 from minestudio.utils.vpt_lib.impala_cnn import ImpalaCNN
 from minestudio.utils.vpt_lib.util import FanInInitReLULayer, ResidualRecurrentBlocks
 from minestudio.models.base_policy import MinePolicy
+from minestudio.online.utils import auto_stack, auto_to_torch
 
 class TranslatorVAE(torch.nn.Module):
+    """
+    Variational Autoencoder for translating between text and visual embeddings.
+    
+    This VAE learns to map text embeddings to visual embeddings through a latent space,
+    enabling text-to-visual translation for multimodal learning tasks. The encoder
+    takes concatenated visual and text embeddings to produce latent representations,
+    while the decoder reconstructs visual embeddings from latent codes and text.
+    """
 
     def __init__(self, input_dim=512, hidden_dim=256, latent_dim=256):
+        """
+        Initialize the TranslatorVAE with specified dimensions.
+        
+        :param input_dim: Dimension of input visual and text embeddings
+        :param hidden_dim: Dimension of hidden layers in encoder and decoder
+        :param latent_dim: Dimension of the latent space
+        """
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -43,27 +58,57 @@ class TranslatorVAE(torch.nn.Module):
         )
 
     def encode(self, visual_embeddings, text_embeddings):
-        """Encode the given visual and text embeddings into a latent vector."""
+        """
+        Encode concatenated visual and text embeddings into latent parameters.
+        
+        :param visual_embeddings: Visual embedding tensor of shape (B, input_dim)
+        :param text_embeddings: Text embedding tensor of shape (B, input_dim)
+        :returns: Encoded tensor containing mean and log variance (B, 2*latent_dim)
+        """
         # Concatenate the visual and text embeddings.
         x = torch.cat([visual_embeddings, text_embeddings], dim=1)
         # Encode the concatenated embeddings into a latent vector.
         return self.encoder(x)
 
     def sample(self, mu, logvar):
-        """Sample a latent vector from the given mu and logvar."""
+        """
+        Sample a latent vector using the reparameterization trick.
+        
+        Applies the reparameterization trick to sample from a Gaussian distribution
+        defined by mu and logvar, enabling backpropagation through stochastic sampling.
+        
+        :param mu: Mean tensor of shape (B, latent_dim)
+        :param logvar: Log variance tensor of shape (B, latent_dim)
+        :returns: Sampled latent vector of shape (B, latent_dim)
+        """
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
     def decode(self, latent_vector, text_embeddings):
-        """Decode the given latent vector and text embeddings into a visual embedding."""
+        """
+        Decode latent vector and text embeddings into visual embeddings.
+        
+        :param latent_vector: Latent representation tensor of shape (B, latent_dim)
+        :param text_embeddings: Text embedding tensor of shape (B, input_dim)
+        :returns: Reconstructed visual embeddings of shape (B, input_dim)
+        """
         # Concatenate the latent vector and text embeddings.
         x = torch.cat([latent_vector, text_embeddings], dim=1)
         # Decode the concatenated embeddings into a visual embedding.
         return self.decoder(x)
 
     def forward(self, text_embeddings, deterministic=False):
-        """Encode the given text embeddings into a latent vector and then decode it into a visual embedding."""
+        """
+        Generate visual embeddings from text embeddings using prior distribution.
+        
+        Uses a zero-mean, unit-variance prior to sample latent vectors and decode
+        them into visual embeddings conditioned on the input text embeddings.
+        
+        :param text_embeddings: Input text embeddings of shape (B, input_dim)
+        :param deterministic: If True, use mean of prior; if False, sample from prior
+        :returns: Generated visual embeddings of shape (B, input_dim)
+        """
         # Use the prior as the mean and logvar.
         mu = torch.zeros(text_embeddings.shape[0], self.latent_dim).to(text_embeddings.device)
         logvar = torch.zeros(text_embeddings.shape[0], self.latent_dim).to(text_embeddings.device)
@@ -79,25 +124,42 @@ class TranslatorVAE(torch.nn.Module):
 
         return pred_visual_embeddings
 
-class ImgPreprocessing(nn.Module):
-    """Normalize incoming images.
-
-    :param img_statistics: remote path to npz file with a mean and std image. If specified
-        normalize images using this.
-    :param scale_img: If true and img_statistics not specified, scale incoming images by 1/255.
+class ImgPreprocessing(torch.nn.Module):
+    """
+    Image preprocessing module for normalization and scaling.
+    
+    Normalizes incoming images using either provided statistics (mean/std) or
+    simple scaling. Supports both statistical normalization from pre-computed
+    statistics and basic scaling by a constant factor.
+    
+    :param img_statistics: Path to npz file containing mean and std statistics.
+        If specified, normalize images using these statistics.
+    :param scale_img: If True and img_statistics not specified, scale images by 1/255.
     """
 
     def __init__(self, img_statistics: Optional[str] = None, scale_img: bool = True):
+        """
+        Initialize image preprocessing with normalization parameters.
+        
+        :param img_statistics: Optional path to npz file with mean/std statistics
+        :param scale_img: Whether to scale images by 1/255 when no statistics provided
+        """
         super().__init__()
         self.img_mean = None
         if img_statistics is not None:
             img_statistics = dict(**np.load(img_statistics))
-            self.img_mean = nn.Parameter(torch.Tensor(img_statistics["mean"]), requires_grad=False)
-            self.img_std = nn.Parameter(torch.Tensor(img_statistics["std"]), requires_grad=False)
+            self.img_mean = torch.nn.Parameter(torch.Tensor(img_statistics["mean"]), requires_grad=False)
+            self.img_std = torch.nn.Parameter(torch.Tensor(img_statistics["std"]), requires_grad=False)
         else:
             self.ob_scale = 255.0 if scale_img else 1.0
 
     def forward(self, img):
+        """
+        Apply preprocessing normalization to input images.
+        
+        :param img: Input image tensor of shape (B, C, H, W) or (B, T, C, H, W)
+        :returns: Normalized image tensor with same shape as input
+        """
         x = img
         if self.img_mean is not None:
             x = (x - self.img_mean) / self.img_std
@@ -105,13 +167,17 @@ class ImgPreprocessing(nn.Module):
             x = x / self.ob_scale
         return x
 
-class ImgObsProcess(nn.Module):
-    """ImpalaCNN followed by a linear layer.
-
-    :param cnn_outsize: impala output dimension
-    :param output_size: output size of the linear layer.
-    :param dense_init_norm_kwargs: kwargs for linear FanInInitReLULayer
-    :param init_norm_kwargs: kwargs for 2d and 3d conv FanInInitReLULayer
+class ImgObsProcess(torch.nn.Module):
+    """
+    Image observation processing using ImpalaCNN followed by a linear layer.
+    
+    Processes image observations through an Impala CNN architecture and then
+    applies a linear transformation to produce the final output embeddings.
+    
+    :param cnn_outsize: Output dimension of the Impala CNN
+    :param output_size: Output size of the final linear layer
+    :param dense_init_norm_kwargs: Initialization kwargs for linear FanInInitReLULayer
+    :param init_norm_kwargs: Initialization kwargs for 2D and 3D conv FanInInitReLULayer
     """
 
     def __init__(
@@ -122,6 +188,15 @@ class ImgObsProcess(nn.Module):
         init_norm_kwargs: Dict = {},
         **kwargs,
     ):
+        """
+        Initialize image observation processing module.
+        
+        :param cnn_outsize: Output dimension of the CNN backbone
+        :param output_size: Final output embedding dimension
+        :param dense_init_norm_kwargs: Kwargs for dense layer initialization
+        :param init_norm_kwargs: Kwargs for convolution layer initialization
+        :param kwargs: Additional arguments passed to ImpalaCNN
+        """
         super().__init__()
         self.cnn = ImpalaCNN(
             outsize=cnn_outsize,
@@ -137,24 +212,37 @@ class ImgObsProcess(nn.Module):
         )
 
     def forward(self, img):
+        """
+        Process image through CNN and linear transformation.
+        
+        :param img: Input image tensor of shape (B, C, H, W)
+        :returns: Processed image features of shape (B, output_size)
+        """
         return self.linear(self.cnn(img))
 
-class MinecraftPolicy(nn.Module):
+class MinecraftPolicy(torch.nn.Module):
     """
-    :param recurrence_type:
-        None                - No recurrence, adds no extra layers
-        lstm                - (Depreciated). Singular LSTM
-        multi_layer_lstm    - Multi-layer LSTM. Uses n_recurrence_layers to determine number of consecututive LSTMs
-            Does NOT support ragged batching
-        multi_masked_lstm   - Multi-layer LSTM that supports ragged batching via the first vector. This model is slower
-            Uses n_recurrence_layers to determine number of consecututive LSTMs
-        transformer         - Dense transformer
-    :param init_norm_kwargs: kwargs for all FanInInitReLULayers.
+    Neural network policy for Minecraft gameplay with multimodal inputs.
+    
+    This policy combines visual and textual information processing through CNN and 
+    recurrent architectures. It supports various recurrence types including LSTM,
+    masked LSTM, and transformer variants for sequential decision making.
+    
+    The architecture processes images through ImpalaCNN, combines with MineCLIP
+    embeddings for text conditioning, and uses recurrent layers for temporal modeling.
+    
+    :param recurrence_type: Type of recurrent architecture:
+        - 'multi_layer_lstm': Multi-layer LSTM (no ragged batching support)
+        - 'multi_layer_bilstm': Bidirectional multi-layer LSTM  
+        - 'multi_masked_lstm': Multi-layer LSTM with ragged batching support
+        - 'transformer': Dense transformer architecture
+        - 'none': No recurrence
+    :param init_norm_kwargs: Initialization kwargs for all FanInInitReLULayers
     """
 
     def __init__(
         self,
-        recurrence_type="transformer", ## 
+        recurrence_type="lstm",
         impala_width=1,
         impala_chans=(16, 32, 32),
         obs_processing_width=256,
@@ -184,9 +272,39 @@ class MinecraftPolicy(nn.Module):
         mineclip_embed_dim=512,  # MODIFIED (added this)
         **unused_kwargs,
     ):
+        """
+        Initialize the Minecraft policy network.
+        
+        :param recurrence_type: Type of recurrent layer ('multi_layer_lstm', 'multi_layer_bilstm', 'multi_masked_lstm', 'transformer', 'none')
+        :param impala_width: Width multiplier for Impala CNN channels
+        :param impala_chans: Base channel sizes for Impala CNN layers
+        :param obs_processing_width: Width for observation processing layers
+        :param hidsize: Hidden state size for recurrent layers and output
+        :param single_output: Whether to use single output for both policy and value
+        :param img_shape: Expected input image shape
+        :param scale_input_img: Whether to scale input images by 1/255
+        :param only_img_input: Whether to use only image inputs (unused)
+        :param init_norm_kwargs: Initialization kwargs for normalization layers
+        :param impala_kwargs: Additional kwargs for Impala CNN
+        :param input_shape: Legacy parameter (unused)
+        :param active_reward_monitors: Dictionary of active reward monitors
+        :param img_statistics: Path to image normalization statistics
+        :param first_conv_norm: Whether to apply normalization to first conv layer
+        :param diff_mlp_embedding: Whether to use different MLP embedding (unused)
+        :param attention_mask_style: Attention masking style for transformer
+        :param attention_heads: Number of attention heads for transformer
+        :param attention_memory_size: Memory size for attention mechanism
+        :param use_pointwise_layer: Whether to use pointwise layers in transformer
+        :param pointwise_ratio: Ratio for pointwise layer dimensions
+        :param pointwise_use_activation: Whether to use activation in pointwise layers
+        :param n_recurrence_layers: Number of recurrent layers to stack
+        :param recurrence_is_residual: Whether recurrent layers use residual connections
+        :param timesteps: Number of timesteps for sequence processing
+        :param use_pre_lstm_ln: Whether to use layer norm before LSTM
+        :param mineclip_embed_dim: Dimension of MineCLIP embeddings
+        :param unused_kwargs: Additional unused arguments
+        """
         super().__init__()
-        # import pdb
-        # pdb.set_trace()
         assert recurrence_type in [
             "multi_layer_lstm",
             "multi_layer_bilstm",
@@ -226,7 +344,7 @@ class MinecraftPolicy(nn.Module):
             **impala_kwargs,
         )
 
-        self.pre_lstm_ln = nn.LayerNorm(hidsize) if use_pre_lstm_ln else None
+        self.pre_lstm_ln = torch.nn.LayerNorm(hidsize) if use_pre_lstm_ln else None
         self.diff_obs_process = None
 
         self.recurrence_type = recurrence_type
@@ -253,9 +371,26 @@ class MinecraftPolicy(nn.Module):
         self.mineclip_embed_linear = torch.nn.Linear(mineclip_embed_dim, hidsize)
 
     def output_latent_size(self):
+        """
+        Get the size of the output latent representation.
+        
+        :returns: Integer size of the hidden/latent dimension
+        """
         return self.hidsize
 
     def forward(self, ob, state_in, context):
+        """
+        Forward pass through the Minecraft policy network.
+        
+        Processes multimodal observations (images and MineCLIP embeddings) through
+        CNN and recurrent layers to produce policy and value latent representations.
+        
+        :param ob: Observation dictionary containing 'img' and 'mineclip_embed' keys
+        :param state_in: Input recurrent state from previous timestep
+        :param context: Context dictionary containing 'first' episode flags
+        :returns: Tuple of ((pi_latent, vf_latent), state_out) where latents are
+                 policy and value representations and state_out is updated recurrent state
+        """
         b, t = ob["img"].shape[:2]
         first = context["first"].bool()
 
@@ -292,12 +427,28 @@ class MinecraftPolicy(nn.Module):
         return (pi_latent, vf_latent), state_out
 
     def initial_state(self, batchsize):
+        """
+        Initialize the recurrent state for a new episode.
+        
+        :param batchsize: Batch size for state initialization
+        :returns: Initial recurrent state tensors or None if no recurrence
+        """
         if self.recurrent_layer:
             return self.recurrent_layer.initial_state(batchsize)
         else:
             return None
 
 class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
+    """
+    Complete STEVE-1 policy combining visual processing, text conditioning, and action prediction.
+    
+    This policy integrates MineCLIP for multimodal understanding, a TranslatorVAE for 
+    text-to-visual translation, and a MinecraftPolicy network for decision making.
+    It supports both text and video conditioning through classifier-free guidance.
+    
+    The architecture enables text-conditioned gameplay by translating textual instructions
+    into visual embeddings that guide the policy's behavior in Minecraft environments.
+    """
     
     def __init__(
         self, 
@@ -307,6 +458,15 @@ class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
         freeze_mineclip: bool = True,
         action_space = None,
     ):
+        """
+        Initialize the STEVE-1 policy with all components.
+        
+        :param mineclip_kwargs: Configuration for MineCLIP multimodal encoder
+        :param prior_kwargs: Configuration for TranslatorVAE prior model
+        :param policy_kwargs: Configuration for MinecraftPolicy network
+        :param freeze_mineclip: Whether to freeze MineCLIP parameters during training
+        :param action_space: Action space specification for the environment
+        """
         net = MinecraftPolicy(** policy_kwargs)
         super().__init__(hiddim=net.hidsize, action_space=action_space)
 
@@ -319,6 +479,17 @@ class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
                 param.requires_grad = False
 
     def prepare_condition(self, instruction: Dict[str, Any], deterministic: bool = False) -> Dict[str, Any]:
+        """
+        Prepare conditioning information from text or video instructions.
+        
+        Processes either text instructions (via TranslatorVAE) or video demonstrations
+        (via direct MineCLIP encoding) to create conditioning embeddings for the policy.
+        
+        :param instruction: Dictionary containing either 'text' or 'video' key plus 'cond_scale'
+        :param deterministic: Whether to use deterministic sampling for text conditioning
+        :returns: Dictionary with 'cond_scale' and 'mineclip_embeds' for policy conditioning
+        :raises AssertionError: If instruction lacks required keys or has conflicting modalities
+        """
         assert 'cond_scale' in instruction, "instruction must have 'cond_scale' key."
 
         if 'video' in instruction:
@@ -360,7 +531,9 @@ class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
             assert 'text' in instruction, "instruction must have either text or video."
 
             texts = instruction['text']
-            if isinstance(texts, str):
+            if isinstance(texts[0], list):
+                texts = texts[0]
+            elif isinstance(texts, str):
                 texts = [texts]
             assert isinstance(texts, list) and isinstance(texts[0], str), "text must be a string or a list of strings."
             
@@ -374,20 +547,35 @@ class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
 
     def forward(
         self, 
-        condition: Dict[str, Any], #
         input: Dict[str, Any], 
         state_in: Optional[List[torch.Tensor]] = None,
         **kwargs
     ) -> Tuple[Dict[str, torch.Tensor], List[torch.Tensor]]:
         """
-        Returns:
-            latents: containing `pi_logits` and `vpred` latent tensors.
-            state_out: containing the updated state tensors.
+        Forward pass with classifier-free guidance for conditioned generation.
+        
+        Performs a forward pass through the policy network with optional classifier-free
+        guidance. When cond_scale > 0, runs both conditioned and unconditioned inference
+        and combines the outputs using the specified guidance scale.
+        
+        :param condition: Dictionary with 'cond_scale' and 'mineclip_embeds'
+        :param input: Dictionary with 'image' key containing observation images
+        :param state_in: Optional list of recurrent state tensors from previous timestep
+        :param kwargs: Additional keyword arguments (unused)
+        :returns: Tuple of (latents_dict, state_out) where latents_dict contains
+                 'pi_logits' and 'vpred' and state_out is updated recurrent state
         """
-        input, condition, state_in = input.copy(), condition.copy(), state_in.copy()
+        condition = input['condition'].copy()
+        if 'mineclip_embeds' not in condition:
+            condition = self.prepare_condition(condition)
+        if state_in is None:
+            state_in = self.initial_state(batch_size=input['image'].shape[0], condition=condition)
+        input, state_in = input.copy(), state_in.copy()
         mineclip_embeds = condition['mineclip_embeds']
         if mineclip_embeds.shape[0] == 1 and input['image'].shape[0] > 1:
             mineclip_embeds = repeat(mineclip_embeds, '1 ... -> b ...', b=input['image'].shape[0])
+        if isinstance(condition['cond_scale'], torch.Tensor):
+            condition['cond_scale'] = condition['cond_scale'][0][0].item() #! TEMPORAL FIXME: remove this when we have a better way to handle this
         if condition['cond_scale'] != 0 and condition['cond_scale'] is not None:
             state_in = [rearrange(x, "b ... c -> (b c) ...") for x in state_in]
             images = repeat(input['image'], "b ... -> (b c) ...", c=2)
@@ -434,42 +622,83 @@ class SteveOnePolicy(MinePolicy, PyTorchModelHubMixin):
     
     def initial_state(
         self, 
-        condition: Dict[str, Any], 
-        batch_size: Optional[int] = None
+        batch_size = None,
+        condition: Dict[str, Any] = None,
     ) -> List[torch.Tensor]:
+        """
+        Initialize recurrent state for policy inference.
+        
+        Creates initial state tensors for the recurrent layers. When classifier-free
+        guidance is enabled (cond_scale > 0), duplicates states for both conditioned
+        and unconditioned inference branches.
+        
+        :param condition: Conditioning dictionary with 'cond_scale' key
+        :param batch_size: Batch size for state initialization
+        :returns: List of initial state tensors
+        """
         initial_state = self.net.initial_state(batch_size)
+        if condition is None:
+            return initial_state
         if condition['cond_scale'] == 0.0 or condition['cond_scale'] is None:
             return initial_state
         else:
             return [torch.stack([x, x], dim=-1) for x in initial_state]
+        
+    def merge_state(self, states) -> Optional[List[torch.Tensor]]:
+        result_states = []
+        for i in range(len(states[0])):
+            result_states.append(auto_to_torch(torch.cat([state[i] for state in states], 0), device=self.device))
+        return result_states
+
+    def split_state(self, states, split_num) -> Optional[List[List[torch.Tensor]]]:
+        result_states = [
+            [states[j][i:i+1] for j in range(len(states))]
+            for i in range(split_num)
+        ]
+        return result_states
 
     def reset_parameters(self):
+        """
+        Reset all trainable parameters in the policy network.
+        
+        :raises NotImplementedError: This method is not yet implemented
+        """
         super().reset_parameters()
         self.net.reset_parameters()
         raise NotImplementedError()
 
     @property
     def device(self) -> torch.device:
+        """
+        Get the device of the policy model.
+        
+        :returns: torch.device where the model parameters are located
+        """
         return next(self.parameters()).device
 
 def load_steve_one_policy(ckpt_path: str) -> SteveOnePolicy:
+    """
+    Load a pre-trained STEVE-1 policy from a checkpoint path.
+    
+    Convenience function to load a STEVE-1 policy using the HuggingFace Hub
+    model loading mechanism.
+    
+    :param ckpt_path: Path or HuggingFace model identifier for the checkpoint
+    :returns: Loaded SteveOnePolicy instance
+    """
     return SteveOnePolicy.from_pretrained(ckpt_path)
 
 if __name__ == '__main__':
     model = SteveOnePolicy.from_pretrained("CraftJarvis/MineStudio_STEVE-1.official").to("cuda")
     model.eval()
-    condition = model.prepare_condition(
-        {
-            'cond_scale': 4.0,
-            'video': np.random.randint(0, 255, (2, 16, 224, 224, 3)).astype(np.uint8)
-        }
-    )
-
-    output, memory = model(condition,
+    output, memory = model.get_action(
         input={
             'image': torch.zeros(2, 8, 128, 128, 3).to("cuda"), 
+            'condition': {
+                'cond_scale': 4.0,
+                'text': 'mine dirt',
+            }
         },
-        state_in=model.initial_state(condition, 2)
+        state_in=None
     )
-    import pdb
-    pdb.set_trace()
+    print(output.keys())
