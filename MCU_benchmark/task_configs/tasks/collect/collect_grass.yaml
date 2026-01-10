@@ -1,0 +1,14 @@
+custom_init_commands:
+- /give @s minecraft:diamond_shovel
+- /setblock ~2 ~ ~ minecraft:grass_block
+defaults:
+- base
+- _self_
+text: Collect grass blocks using the appropriate tool.
+reward_cfg:
+- event: mine_block
+  identity: collect_grass
+  objects:
+  - grass
+  reward: 0.2
+  max_reward_times: 30

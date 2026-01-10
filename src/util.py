@@ -3,6 +3,7 @@ import base64
 from openai import OpenAI
 import os
 import json
+import yaml
 
 from datetime import datetime
 from pathlib import Path
@@ -10,19 +11,14 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parents[1]
 
 def extract_info(yaml_content, filename):
-    lines = yaml_content.splitlines()
-    commands = []
-    text = ''
-
-    for line in lines:
-        if line.startswith('-'):
-            command = line.strip('- ').strip()
-            commands.append(command)
-        elif line.startswith('text:'):
-            text = line.strip('text: ').strip()
-
+    data = yaml.safe_load(yaml_content)
+    
+    commands = data.get('custom_init_commands', [])
+    text = data.get('text', '')
+    reward_cfg = data.get('reward_cfg', [])
+    
     task = filename[:-5]
-    return task, commands, text
+    return task, commands, text, reward_cfg
 
 def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
     # Resolve task configs directory relative to this file's project root
@@ -47,8 +43,8 @@ def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|No
         file_path = task_dir / filename
         with open(file_path, 'r', encoding='utf-8') as file:
             yaml_content = file.read()
-        task, commands, text = extract_info(yaml_content, filename)
-        tasks.append((task, commands, text))
+        task, commands, text, reward_cfg = extract_info(yaml_content, filename)
+        tasks.append((task, commands, text, reward_cfg))
     
     return tasks
 

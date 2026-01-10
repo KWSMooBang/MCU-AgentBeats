@@ -1,0 +1,14 @@
+custom_init_commands:
+- /give @s minecraft:wooden_shovel 1
+- /give @s minecraft:dirt 64
+defaults:
+- base
+- _self_
+text: Collect dirt blocks from the ground.
+reward_cfg:
+- event: mine_block
+  identity: collect_dirt
+  objects:
+  - dirt
+  reward: 0.2
+  max_reward_times: 30

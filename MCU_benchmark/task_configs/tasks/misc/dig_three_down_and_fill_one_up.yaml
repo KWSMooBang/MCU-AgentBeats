@@ -1,0 +1,22 @@
+custom_init_commands:
+- /give @s minecraft:iron_shovel 1
+- /give @s minecraft:dirt 10
+defaults:
+- base
+- _self_
+text: Dig three blocks down and fill one block up with dirt.
+reward_cfg:
+- event: mine_block
+  identity: dig_blocks
+  objects:
+  - dirt
+  - stone
+  reward: 0.3
+  max_reward_times: 10
+- event: use_item
+  identity: fill_block
+  objects:
+  - dirt
+  - cobblestone
+  reward: 0.5
+  max_reward_times: 5

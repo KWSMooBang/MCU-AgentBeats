@@ -1,0 +1,16 @@
+custom_init_commands:
+- /give @s minecraft:cobblestone 20
+- /give @s minecraft:crafting_table 1
+defaults:
+- base
+- _self_
+text: Craft a furnace for smelting items.
+reward_cfg:
+- event: pickup_item
+  identity: get_smelted_item
+  objects:
+  - iron_ingot
+  - cooked_beef
+  - glass
+  reward: 10.0
+  max_reward_times: 1
