@@ -17,7 +17,6 @@ dependencies = [
     "uvicorn>=0.35.0",
     "psutil>=7.2.1",
     "pyglet==1.4.0b1",
-    "scikit-image>=0.20.0", 
     # MineStudio from github
     "minestudio @ git+https://github.com/CraftJarvis/MineStudio.git"
 ]
