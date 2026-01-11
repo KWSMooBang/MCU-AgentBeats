@@ -6,5 +6,4 @@ role = "agent"
 endpoint = "http://host.docker.internal:9019"
 
 [config]
-difficulty = "simple"
-task_list = ["look at the sky"]
+task_category = ["overall"]
