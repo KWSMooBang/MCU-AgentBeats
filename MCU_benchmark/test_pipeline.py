@@ -23,7 +23,7 @@ if __name__ == '__main__':
     for file_name in os.listdir(conf_path):
         if file_name.endswith('.yaml'):
             file_path = os.path.join(conf_path, file_name)
-            commands_callback, task_callback = convert_yaml_to_callbacks(file_path)
+            commands_callback, task_callback, milestone_reward_cfg = convert_yaml_to_callbacks(file_path)
             print(f'Task: {task_callback}')
             print(f'Init commands: {commands_callback}')
 
