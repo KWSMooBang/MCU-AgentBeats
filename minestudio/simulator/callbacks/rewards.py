@@ -56,6 +56,8 @@ class RewardsCallback(MinecraftCallback):
         self.prev_info = info.copy()
         self.reward_memory = {}
         self.current_step = 0
+        # Initialize milestones to all 0
+        obs["milestones"] = {cfg['identity']: 0 for cfg in self.reward_cfg}
         return obs, info
     
     def after_step(self, sim, obs, reward, terminated, truncated, info):
@@ -84,6 +86,12 @@ class RewardsCallback(MinecraftCallback):
                     self.reward_memory[reward_info['identity']] = already_reward_times + 1
                 break
         self.prev_info = info.copy()
+
+        # Add milestone progress to observation (0 or 1 for each milestone)
+        obs["milestones"] = {
+            cfg['identity']: 1 if cfg['identity'] in self.reward_memory else 0
+            for cfg in self.reward_cfg
+        }
 
         self.current_step += 1
         return obs, override_reward, terminated, truncated, info

@@ -11,6 +11,7 @@ def convert_yaml_to_callbacks(yaml_file):
     with open(yaml_file, 'r') as f:
         data = yaml.safe_load(f)
     commands = data.get('custom_init_commands', [])
+    milestone_reward_cfg = data.get('milestone_reward_cfg', None)
 
     text = data.get('text', '')
     task_name = os.path.splitext(os.path.basename(yaml_file))[0]
@@ -18,4 +19,4 @@ def convert_yaml_to_callbacks(yaml_file):
     task_dict['name'] = task_name
     task_dict['text'] = text
 
-    return commands, task_dict
+    return commands, task_dict, milestone_reward_cfg
