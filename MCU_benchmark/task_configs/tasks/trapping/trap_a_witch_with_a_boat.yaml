@@ -6,10 +6,3 @@ custom_init_commands:
 text: trap a witch using a boat
 thinking: '- In order to trap a witch with a boat, we need to have a boat and a witch
   summoned nearby.'
-reward_cfg:
-- event: use_item
-  identity: trap_with_boat
-  objects:
-  - boat
-  reward: 3.0
-  max_reward_times: 1

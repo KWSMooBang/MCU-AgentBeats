@@ -11,11 +11,3 @@ text: build a library with bookshelves and decorative elements
 thinking: '- In order to build a library, you will need a variety of building materials
   such as wood planks, bookshelves, and decorative items like glass panes or wool
   for carpets. You may also want villagers to act as librarians.'
-reward_cfg:
-- event: use_item
-  identity: place_library_blocks
-  objects:
-  - bookshelf
-  - oak_planks
-  reward: 0.1
-  max_reward_times: 100

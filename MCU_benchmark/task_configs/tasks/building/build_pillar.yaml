@@ -5,12 +5,3 @@ defaults:
 - base
 - _self_
 text: Build a pillar using blocks of your choice.
-reward_cfg:
-- event: use_item
-  identity: place_pillar_blocks
-  objects:
-  - stone
-  - cobblestone
-  - quartz_block
-  reward: 0.2
-  max_reward_times: 50

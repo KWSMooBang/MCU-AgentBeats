@@ -6,10 +6,3 @@ defaults:
 - base
 - _self_
 text: Build a waterfall in your Minecraft world.
-reward_cfg:
-- event: use_item
-  identity: place_water
-  objects:
-  - water
-  reward: 1.0
-  max_reward_times: 10

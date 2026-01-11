@@ -6,11 +6,3 @@ defaults:
 - base
 - _self_
 text: Build a gate to secure your area in Minecraft.
-reward_cfg:
-- event: use_item
-  identity: place_gate
-  objects:
-  - oak_fence_gate
-  - fence
-  reward: 0.5
-  max_reward_times: 20

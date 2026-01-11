@@ -14,12 +14,3 @@ text: create a decorative garden with various plants and flowers
 thinking: '- In order to build a garden, we need various plants, flowers, and decorative
   items. We can also use materials like grass blocks, fences, and pathways to enhance
   the garden''s appearance.'
-reward_cfg:
-- event: use_item
-  identity: place_garden_blocks
-  objects:
-  - dirt
-  - grass_block
-  - flower
-  reward: 0.1
-  max_reward_times: 100

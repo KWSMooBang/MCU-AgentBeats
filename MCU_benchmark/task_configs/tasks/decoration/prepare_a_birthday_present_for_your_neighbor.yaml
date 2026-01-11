@@ -8,4 +8,11 @@ defaults:
 - _self_
 text: 'Prepare a birthday present for your neighbor using various decorative items
   and a cake.  '
-
+reward_cfg:
+- event: use_item
+  identity: place_birthday_present
+  objects:
+  - cake
+  - chest
+  reward: 5.0
+  max_reward_times: 2

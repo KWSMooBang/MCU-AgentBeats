@@ -7,9 +7,17 @@ text: lay a carpet using wool
 thinking: '- In order to lay a carpet, we need carpet items, which can be crafted
   using wool. Therefore, we need wool blocks and a crafting table to craft the carpet.'
 reward_cfg:
+- event: craft_item
+  identity: craft_carpet
+  objects:
+  - white_carpet
+  - red_carpet
+  reward: 0.25
+  max_reward_times: 20
 - event: use_item
   identity: place_carpet
   objects:
-  - carpet
-  reward: 0.3
-  max_reward_times: 30
+  - white_carpet
+  - red_carpet
+  reward: 0.25
+  max_reward_times: 20
