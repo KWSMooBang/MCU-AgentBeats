@@ -9,5 +9,5 @@ reward_cfg:
   identity: drink_potion
   objects:
   - potion
-  reward: 5.0
+  reward: 10.0
   max_reward_times: 1

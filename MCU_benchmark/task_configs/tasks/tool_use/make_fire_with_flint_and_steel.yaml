@@ -8,10 +8,3 @@ defaults:
 - base
 - _self_
 text: Use flint and steel to ignite a fire.
-reward_cfg:
-- event: use_item
-  identity: place_fire
-  objects:
-  - fire
-  reward: 2.0
-  max_reward_times: 5

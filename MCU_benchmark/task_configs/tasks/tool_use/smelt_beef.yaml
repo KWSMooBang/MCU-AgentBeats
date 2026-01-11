@@ -6,10 +6,3 @@ defaults:
 - base
 - _self_
 text: Smelt raw food items to create cooked food using a furnace.
-reward_cfg:
-- event: pickup_item
-  identity: get_cooked_beef
-  objects:
-  - cooked_beef
-  reward: 1.0
-  max_reward_times: 10

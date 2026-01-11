@@ -7,10 +7,3 @@ defaults:
 - base
 - _self_
 text: Plant wheat seeds in tilled soil.
-reward_cfg:
-- event: use_item
-  identity: plant_wheat_seeds
-  objects:
-  - wheat
-  reward: 0.5
-  max_reward_times: 20

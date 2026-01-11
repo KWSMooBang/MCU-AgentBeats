@@ -8,10 +8,3 @@ defaults:
 - base
 - _self_
 text: Enchant a diamond sword using an enchanting table.
-reward_cfg:
-- event: use_item
-  identity: enchant_item
-  objects:
-  - enchanting_table
-  reward: 5.0
-  max_reward_times: 1
