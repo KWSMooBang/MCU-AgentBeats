@@ -27,14 +27,17 @@ import os
 import time
 from pathlib import Path
 
-# Path setup (handle both host and container paths)
-if os.path.exists('/workspace/llmrl/work/MCU'):
-    MCU_PATH = '/workspace/llmrl/work/MCU'
-else:
-    MCU_PATH = '/home/heatz123/llmrl/work/MCU'
+# Path setup - use environment variable or script location
+MCU_PATH = os.getenv('MCU_PATH')
+if MCU_PATH is None:
+    # Default to parent directory of this script
+    script_dir = Path(__file__).parent
+    MCU_PATH = str(script_dir.parent)
 
-sys.path.insert(0, os.path.join(MCU_PATH, 'MCU_benchmark'))
-os.chdir(os.path.join(MCU_PATH, 'MCU_benchmark'))
+benchmark_path = os.path.join(MCU_PATH, 'MCU_benchmark')
+sys.path.insert(0, benchmark_path)
+os.chdir(benchmark_path)
+
 
 from minestudio.simulator import MinecraftSim
 from minestudio.simulator.callbacks import (
