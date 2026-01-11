@@ -8,11 +8,4 @@ defaults:
 - _self_
 text: 'Prepare a birthday present for your neighbor using various decorative items
   and a cake.  '
-reward_cfg:
-- event: craft_item
-  identity: prepare_present
-  objects:
-  - cake
-  - flower
-  reward: 2.0
-  max_reward_times: 5
+
