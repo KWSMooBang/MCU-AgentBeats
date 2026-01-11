@@ -10,7 +10,7 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parents[1]
 
-def extract_info(yaml_content, filename):
+def extract_info(yaml_content: str, filename: str) -> tuple:
     data = yaml.safe_load(yaml_content)
     
     commands = data.get('custom_init_commands', [])
@@ -20,35 +20,40 @@ def extract_info(yaml_content, filename):
     task = filename[:-5]
     return task, commands, text, reward_cfg
 
-def get_tasks(difficulty: str, task_list: list[str]|None=None, num_tasks: int|None=None) -> list[str]:
+def get_tasks(task_category: list[str] = []) -> list[tuple]:
     # Resolve task configs directory relative to this file's project root
-    task_dir = root_dir / 'MCU_benchmark' / 'task_configs' / difficulty
-    if not task_dir.exists():
-        raise FileNotFoundError(f"Task configs directory not found: {task_dir}")
-    all_task_files = [p.name for p in task_dir.iterdir() if p.suffix == '.yaml']
+    tasks_dir = root_dir / 'MCU_benchmark' / 'task_configs' / 'tasks'
+    if not tasks_dir.exists():
+        raise FileNotFoundError(f"Task configs directory not found: {tasks_dir}")
     
-    if task_list:
-        task_files = [f"{task.replace(' ', '_')}.yaml" for task in task_list if f"{task.replace(' ', '_')}.yaml" in all_task_files]
-        if len(task_files) == 0:
-            print("No matching task names found. Using all tasks.")
-            task_files = all_task_files
-    else: 
-        task_files = all_task_files
+    # If task_category is empty, use all categories except overall
+    if not task_category:
+        categories = [d.name for d in tasks_dir.iterdir() if d.is_dir() and d.name != 'overall']
+    else:
+        categories = task_category
+    
+    # Collect all task files from specified categories
+    task_files = []
+    for category in categories:
+        category_dir = tasks_dir / category
+        if not category_dir.exists():
+            print(f"Warning: Category '{category}' not found, skipping.")
+            continue
         
-    if num_tasks:
-        task_files = task_files[:num_tasks]
+        for task_file in category_dir.glob('*.yaml'):
+            task_files.append((category, task_file))
     
+    # Parse each task file
     tasks = []
-    for filename in task_files:
-        file_path = task_dir / filename
+    for category, file_path in task_files:
         with open(file_path, 'r', encoding='utf-8') as file:
             yaml_content = file.read()
-        task, commands, text, reward_cfg = extract_info(yaml_content, filename)
-        tasks.append((task, commands, text, reward_cfg))
+        task, commands, text, reward_cfg = extract_info(yaml_content, file_path.name)
+        tasks.append((task, commands, text, reward_cfg, category))
     
     return tasks
 
-def fetch(query, model='gpt-4o'): # gpt4
+def fetch(query: list[dict], model: str = 'gpt-4o') -> str:  # gpt4
     print(f'fetching {model} ...')
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
@@ -95,7 +100,7 @@ def process_video(video_path: str) -> list[str]:
         
     return base64Frames1
 
-def assess_video(task, rule_file, frames, video_path):
+def assess_video(task: str, rule_file: str, frames: list[str], video_path: str) -> float:
     prompt_dir = root_dir / 'MCU_benchmark' / 'auto_eval' / 'prompt'
     prompt_file = prompt_dir / 'single_rating_prompt.txt'
     if not prompt_file.exists():
@@ -140,7 +145,7 @@ def assess_video(task, rule_file, frames, video_path):
     result = save_data_json(response, task, video_path)
     return result
 
-def save_data_json(response: str, task: str, video_path: str) -> dict:
+def save_data_json(response: str, task: str, video_path: str) -> float:
     result = {}
     keys_to_extract = [  
         "Task Progress",  
@@ -151,21 +156,30 @@ def save_data_json(response: str, task: str, video_path: str) -> dict:
         "Material Selection and Usage"  
     ]  
 
+    result['task'] = task
+    result['video_path'] = video_path
+
     for line in response.strip().split('\n'):  
         for key in keys_to_extract:  
             if line.startswith(f'- {key}: '):   
                 value = (line.split(': ', 1)[1].strip()) 
                 
                 if value: 
-                    result[key] = value  
+                    result[key] = float(value)  
                     break  
-                
-    result['video_path'] = video_path
-    result['task'] = task
+    
+    sum_score = 0
+    num_criteria = 0
+    for key in keys_to_extract:
+        if key in result:
+            num_criteria += 1
+            sum_score += result[key]
+    result['final score'] = sum_score / num_criteria if num_criteria > 0 else 0
+    result['origin response'] = response
     
     output_dir = os.path.dirname(video_path)
-    result_path = os.path.join(output_dir, f"video_eval.json")
+    result_path = os.path.join(output_dir, f"video_eval_result.json")
     with open(result_path, 'w') as f:
         json.dump(result, f, indent=4)
 
-    return result 
+    return result['final score']

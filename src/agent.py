@@ -25,13 +25,12 @@ class Agent:
     # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
     required_roles: list[str] = ["agent"]
     # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
-    required_config_keys: list[str] = ["difficulty"]
-
+    required_config_keys: list[str] = []
+    
     def __init__(self):
         self.messenger = Messenger()
         # Initialize other state here
         self.root_dir = Path(__file__).resolve().parents[1]
-        
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
@@ -41,11 +40,6 @@ class Agent:
         missing_config_keys = set(self.required_config_keys) - set(request.config.keys())
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
-
-        # Validate difficulty
-        difficulty = request.config.get("difficulty")
-        if difficulty not in ['simple', 'hard']:
-            return False, f"Invalid difficulty: {difficulty}. Must be 'simple' or 'hard'"
 
         return True, "ok"
 
@@ -74,16 +68,17 @@ class Agent:
         agent_url = str(request.participants["agent"])
         
         # Get config parameters
-        difficulty = request.config["difficulty"]
-        task_list = request.config.get("task_list", None)
-        num_tasks = request.config.get("num_tasks", None)
+        task_category = request.config.get("task_category", [])
         max_steps = request.config.get("max_steps", 900)
         
         # Get tasks
-        tasks = get_tasks(difficulty, task_list, num_tasks)
+        tasks = get_tasks(task_category)
+        num_tasks = len(tasks)
+        category_str = ", ".join(task_category) if task_category else "all categories"
+        
         await updater.update_status(
             TaskState.working, 
-            new_agent_text_message(f"Starting MCU evaluation with {len(tasks)} {difficulty} tasks")
+            new_agent_text_message(f"Starting MCU evaluation with {num_tasks} tasks from {category_str}")
         )
         
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -92,10 +87,10 @@ class Agent:
         metrics: dict = {}
         
         try: 
-            for task, commands, text in tasks:
+            for task, commands, text, reward_cfg, category in tasks:
                 await updater.update_status(
                     TaskState.working, 
-                    new_agent_text_message(f"Running task: {task.replace('_', ' ')}")
+                    new_agent_text_message(f"Running task: {task.replace('_', ' ')} (category: {category})")
                 )
                 
                 metrics[task] = {}
@@ -108,7 +103,7 @@ class Agent:
                         max_steps,
                         record_path=os.path.join(output_dir, task)
                     )
-                    metrics[task]["reward"] = reward
+                    metrics[task]["sim_score"] = reward
                     
                     criteria_dir = self.root_dir / "MCU_benchmark" /"auto_eval" / "criteria_files"
                     rule_file_path = os.path.join(criteria_dir, f"{task}.txt")
@@ -123,37 +118,35 @@ class Agent:
                             
                 except Exception as e:
                     print(f"Error running task {task}: {e}")
-                    metrics[task]["reward"] = None
+                    metrics[task]["sim_score"] = None
                     metrics[task]["video_score"] = None
         
             # Calculate metrics
-            task_rewards = [m["reward"] for m in metrics.values() if m.get("reward") is not None]
-            total_reward = sum(task_rewards)
-            num_completed = len(task_rewards)
-            pass_rate = (total_reward / num_completed * 100) if num_completed > 0 else 0.0
+            score_list = [m["video_score"] for m in metrics.values() if m.get("video_score") is not None]
+            total_reward = sum(score_list)
             
             result = {
-                "difficulty": difficulty,
-                "score": total_reward,
-                "pass_rate": pass_rate,
-                "num_tasks": len(metrics),
-                "num_completed": num_completed,
-                "task_metrics": {task: m["reward"] for task, m in metrics.items()},
-                "video_scores": {task: m.get("video_score") for task, m in metrics.items()}
+                "task_category": task_category if task_category else "all",
+                "num_tasks": num_tasks,
+                "total_score": total_reward,
+                "task_metrics": {
+                    task: m["video_score"] 
+                    for task, m in metrics.items() if m.get("video_score") is not None
+                },
             }
             
             task_result_str = "\n".join(
-                f"Task '{task_name}': {'✓' if m['reward'] == 1.0 else '✗'} ({m['reward']})"
-                for task_name, m in metrics.items()
+                f"  Task '{task_name}': {m['video_score']}"
+                for task_name, m in metrics.items() if m.get("video_score") is not None
             )
             
             summary = f"""MCU Evaluation Result
-    Difficulty: {difficulty}
-    Tasks: {num_completed}
-    Pass Rate: {pass_rate:.2f}% ({int(total_reward)}/{num_completed})
+Categories: {category_str}
+Number of Tasks: {num_tasks}
+Total Score: {total_reward} / {10 * num_tasks}
 
-    Task Results:
-    {task_result_str}"""
+Task Results:
+{task_result_str}"""
     
             # Save results to txt file
             result_file = os.path.join(output_dir, "result.txt")
@@ -178,9 +171,9 @@ class Agent:
         text: str,
         max_steps: int,
         record_path: str
-    ):
+    ) -> float:
         """ 
-        Run a single MCU task and reutrn the reward.
+        Run a single MCU task and return the reward.
         """
         env = MinecraftSim(
             obs_size=(128, 128),
@@ -237,16 +230,16 @@ class Agent:
 
         return total_reward
     
-    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict[str, Any]:
+    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> float:
         try:
             video_frames = process_video(video_path)
-            result = assess_video(task, rule_file_path, video_frames, video_path)
-            return result
+            score = assess_video(task, rule_file_path, video_frames, video_path)
+            return score
         except Exception as e:
             print(f"Video evaluation failed for {task}: {e}")
-            return {"error": str(e)}
+            return 0.0
     
-    def _parse_agent_response(self, response: str):
+    def _parse_agent_response(self, response: str) -> dict:
         """
         Parse the purple agent's response string and convert it into an action dict acceptable by `env.step(action)`.
         """
