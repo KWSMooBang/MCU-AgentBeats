@@ -1,8 +1,9 @@
-import os
+import sys, os
 import json
 import numpy as np
 import base64
 import cv2
+import asyncio
 
 from pathlib import Path
 from datetime import datetime
@@ -13,8 +14,13 @@ from a2a.server.tasks import TaskUpdater
 from a2a.types import Message, TaskState, Part, TextPart, DataPart
 from a2a.utils import get_message_text, new_agent_text_message
 
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from minestudio.simulator import MinecraftSim
-from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback
+from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback, TaskCallback
+from MCU_benchmark.utility.milestone_tracker import MilestoneTrackerCallback
 
 from messenger import Messenger
 from model import EvalRequest, InitPayload, ObservationPayload, AckPayload, ActionPayload
@@ -69,7 +75,6 @@ class Agent:
         
         # Get config parameters
         task_category = request.config.get("task_category", [])
-        max_steps = request.config.get("max_steps", 900)
         
         # Get tasks
         tasks = get_tasks(task_category)
@@ -87,57 +92,106 @@ class Agent:
         metrics: dict = {}
         
         try: 
-            for task, commands, text, reward_cfg, category in tasks:
+            for task, commands, text, reward_cfg, milestone_reward_cfg in tasks:
+                print(f"Running task: {task.replace('_', ' ')}")
                 await updater.update_status(
                     TaskState.working, 
-                    new_agent_text_message(f"Running task: {task.replace('_', ' ')} (category: {category})")
+                    new_agent_text_message(f"Running task: {task.replace('_', ' ')}")
                 )
                 
                 metrics[task] = {}
                 
                 try:
-                    reward = await self._run_single_task(
+                    sim_score = await self._run_single_task(
                         agent_url,
+                        task, 
                         commands,
                         text,
-                        max_steps,
+                        reward_cfg,
+                        milestone_reward_cfg,
                         record_path=os.path.join(output_dir, task)
                     )
-                    metrics[task]["sim_score"] = reward
+                    metrics[task]["sim_score"] = sim_score
                     
                     criteria_dir = self.root_dir / "MCU_benchmark" /"auto_eval" / "criteria_files"
                     rule_file_path = os.path.join(criteria_dir, f"{task}.txt")
                     video_path = os.path.join(output_dir, task, "episode_1.mp4")
+                    
+                    # Initialize video_score
+                    video_score = None
+                    
+                    # Validate video files
+                    if not os.path.exists(video_path):
+                        print(f"Warning: Video file not found for {task}")
+                        metrics[task]["video_score"] = None
+                    else:
+                        video_score = await self._run_video_eval(
+                            task=task,
+                            rule_file_path=rule_file_path,
+                            video_path=video_path
+                        )
+                        metrics[task]["video_score"] = video_score
                         
-                    video_score = await self._run_video_eval(
-                        task=task,
-                        rule_file_path=rule_file_path,
-                        video_path=video_path
-                    )
-                    metrics[task]["video_score"] = video_score
-                            
+                    # Normalize sim_score to 0-50 scale for long horizon tasks
+                    if milestone_reward_cfg:
+                        # Calculate max possible reward from config
+                        max_reward = 0.0
+                        
+                        for cfg in milestone_reward_cfg:
+                            reward = cfg.get('reward', 1.0)
+                            max_times = cfg.get('max_reward_times', 1)
+                            max_reward += reward * max_times
+                        
+                        sim_score = (sim_score / max_reward) * 50 if max_reward > 0 else 0
+                        video_score = (video_score / 10) * 50 if video_score is not None else None
+                    
+                    if metrics[task]["video_score"] is None:
+                        metrics[task]["total_score"] = sim_score
+                    else:
+                        if reward_cfg or milestone_reward_cfg:
+                            if sim_score > 0:
+                                metrics[task]["total_score"] = (sim_score + video_score) / 2.0
+                            else: 
+                                metrics[task]["total_score"] = 0.0
+                        else:
+                            metrics[task]["total_score"] = video_score
+                        
+                    print(f"Task {task} - sim_score: {sim_score}, video_score: {video_score}, total_score: {metrics[task]['total_score']}")
+                    
+                    if metrics[task].get("total_score") is not None:
+                        result_msg = f"""Task {task} complete
+- Simulator Score: {metrics[task]['total_score']:.2f} / 10
+- Video Score: {metrics[task]['video_score'] if metrics[task]['video_score'] is not None else 'N/A'} / 10
+- Total Score: {metrics[task]['total_score']:.2f} / 10"""
+                        await updater.update_status(
+                            TaskState.working,
+                            new_agent_text_message(result_msg)
+                        )
                 except Exception as e:
                     print(f"Error running task {task}: {e}")
                     metrics[task]["sim_score"] = None
                     metrics[task]["video_score"] = None
+                    metrics[task]["total_score"] = None
+                    metrics[task]["error"] = str(e)
+                    metrics[task]["error_type"] = type(e).__name__
         
             # Calculate metrics
-            score_list = [m["video_score"] for m in metrics.values() if m.get("video_score") is not None]
+            score_list = [m["total_score"] for m in metrics.values() if m.get("total_score") is not None]
             total_reward = sum(score_list)
             
             result = {
                 "task_category": task_category if task_category else "all",
                 "num_tasks": num_tasks,
                 "total_score": total_reward,
-                "task_metrics": {
-                    task: m["video_score"] 
-                    for task, m in metrics.items() if m.get("video_score") is not None
-                },
+                "task_metrics": metrics
             }
             
             task_result_str = "\n".join(
-                f"  Task '{task_name}': {m['video_score']}"
-                for task_name, m in metrics.items() if m.get("video_score") is not None
+                f"""    Task '{task_name}':
+        - sim_score: {m['sim_score']}
+        - video_score: {m['video_score']}
+        - total_score: {m['total_score']}"""
+                for task_name, m in metrics.items() 
             )
             
             summary = f"""MCU Evaluation Result
@@ -160,6 +214,8 @@ Task Results:
                 ],
                 name="Result"
             )
+            print("========== Evaluation completed. ==========")
+            print(summary)
         
         finally:
             self.messenger.reset()
@@ -167,21 +223,47 @@ Task Results:
     async def _run_single_task(
         self,
         agent_url: str,
+        task: str,
         commands: list[str],
         text: str,
-        max_steps: int,
+        reward_cfg: list[dict],
+        milestone_reward_cfg: list[dict],
         record_path: str
     ) -> float:
         """ 
         Run a single MCU task and return the reward.
         """
+        
+        max_steps = 600 if not milestone_reward_cfg else 12000
+        
+        task_dict = {
+            'name': task.replace('_', ' '),
+            'text': text
+        }
+        
+        callbacks = [
+            RecordCallback(
+                record_path=str(record_path),
+                fps=20,
+                frame_type='pov',
+            ),
+            TaskCallback([task_dict]),  # TaskCallback expects a list
+            CommandsCallback(commands),
+        ]
+        
+        if reward_cfg:
+            callbacks.append(RewardsCallback(reward_cfg=reward_cfg))
+        
+        if milestone_reward_cfg:
+            callbacks.append(MilestoneTrackerCallback(
+                reward_cfg=milestone_reward_cfg,
+                output_path=record_path,
+                task_name=task
+            ))
+        
         env = MinecraftSim(
             obs_size=(128, 128),
-            callbacks=[
-                RecordCallback(record_path=record_path, fps=30, frame_type="pov"),
-                JudgeResetCallback(max_steps),
-                CommandsCallback(commands),
-            ]
+            callbacks=callbacks
         )
         
         def encode_image(image: np.ndarray, fmt: str = '.jpeg') -> str:
@@ -197,10 +279,13 @@ Task Results:
         
         try:
             init_payload = InitPayload(text=text)
-            res = await self.messenger.talk_to_agent(
-                message=init_payload.model_dump_json(),
-                url=agent_url,
-                new_conversation=True,
+            res = await asyncio.wait_for(
+                self.messenger.talk_to_agent(
+                    message=init_payload.model_dump_json(),
+                    url=agent_url,
+                    new_conversation=True,
+                ),
+                timeout=60.0
             )
             action_payload = AckPayload.model_validate_json(res)
             assert action_payload.success, f"Agent initialization failed: {action_payload.message}"
@@ -213,20 +298,33 @@ Task Results:
                     step=step,
                     obs=encode_image(obs_img)
                 )
-                res = await self.messenger.talk_to_agent(
-                    message=obs_payload.model_dump_json(),
-                    url=agent_url,
-                    new_conversation=False,
-                )
                 
-                action = self._parse_agent_response(res)
+                try:
+                    res = await asyncio.wait_for(
+                        self.messenger.talk_to_agent(
+                            message=obs_payload.model_dump_json(),
+                            url=agent_url,
+                            new_conversation=False,
+                        ),
+                        timeout=60.0
+                    )
+                    action = self._parse_agent_response(res)
+                except asyncio.TimeoutError:
+                    print(f"Agent timeout at step {step}, using noop action")
+                    action = {"buttons": np.array([0]), "camera": np.array([60])}
                 obs, reward, terminated, truncated, info = env.step(action)
                 total_reward += reward
                 
                 if terminated:
                     break
+        except Exception as e:
+            print(f"Error at step {step}: {e}")
         finally:
-            env.close()
+            if env is not None:
+                try:
+                    env.close()
+                except Exception as e:
+                    print(f"Error closing environment: {e}")
 
         return total_reward
     

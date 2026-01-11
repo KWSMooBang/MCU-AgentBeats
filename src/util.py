@@ -4,6 +4,7 @@ from openai import OpenAI
 import os
 import json
 import yaml
+import time
 
 from datetime import datetime
 from pathlib import Path
@@ -16,9 +17,10 @@ def extract_info(yaml_content: str, filename: str) -> tuple:
     commands = data.get('custom_init_commands', [])
     text = data.get('text', '')
     reward_cfg = data.get('reward_cfg', [])
+    milestone_reward_cfg = data.get('milestone_reward_cfg', [])
     
     task = filename[:-5]
-    return task, commands, text, reward_cfg
+    return task, commands, text, reward_cfg, milestone_reward_cfg
 
 def get_tasks(task_category: list[str] = []) -> list[tuple]:
     # Resolve task configs directory relative to this file's project root
@@ -48,8 +50,8 @@ def get_tasks(task_category: list[str] = []) -> list[tuple]:
     for category, file_path in task_files:
         with open(file_path, 'r', encoding='utf-8') as file:
             yaml_content = file.read()
-        task, commands, text, reward_cfg = extract_info(yaml_content, file_path.name)
-        tasks.append((task, commands, text, reward_cfg, category))
+        task, commands, text, reward_cfg, milestone_reward_cfg = extract_info(yaml_content, file_path.name)
+        tasks.append((task, commands, text, reward_cfg, milestone_reward_cfg))
     
     return tasks
 
@@ -58,14 +60,24 @@ def fetch(query: list[dict], model: str = 'gpt-4o') -> str:  # gpt4
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable not set")
+    
     client = OpenAI(api_key=api_key)
-    completion = client.chat.completions.create(
-        model=model,
-        messages=query,
-        temperature=0.7
-    )
-    res = completion.choices[0].message.content
-    return res
+    
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=query,
+                temperature=0.5,
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            print(f"API call failed (attempt {attempt + 1}/{max_attempts}): {e}")
+            if attempt < max_attempts - 1:
+                time.sleep(2 ** attempt)  
+            else:
+                raise
 
 def process_video(video_path: str) -> list[str]:
     """Extract frames from video and encode as base64.
@@ -80,25 +92,32 @@ def process_video(video_path: str) -> list[str]:
         raise FileNotFoundError(f"Video not found: {video_path}")
     
     video = cv2.VideoCapture(video_path)
+    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = int(video.get(cv2.CAP_PROP_FPS))
+    
+    # Adaptive sampling rate
+    if total_frames < 60 * 20:
+        sample_rate = 20  # Every 20 frames (~1 sec at 20fps)
+    else:
+        sample_rate = 60
+    
     base64Frames = []
+    frame_count = 0
+    
     while video.isOpened():
         success, frame = video.read()
         if not success:
             break
-        # frame = cv2.resize(orig_frame, (224, 224))
-        if not success:
-            break
-        _, buffer = cv2.imencode(".jpg", frame)
-        base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
-
-    video.release()
-
-    base64Frames1 = base64Frames[0::25]
-    print(len(base64Frames1), "frames read.")
-    if (len(base64Frames1) > 60):
-        base64Frames1 = base64Frames[0::70]
         
-    return base64Frames1
+        if frame_count % sample_rate == 0:
+            _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
+        
+        frame_count += 1
+    
+    video.release()
+    print(f"{len(base64Frames)} frames sampled from {total_frames} total frames.")
+    return base64Frames
 
 def assess_video(task: str, rule_file: str, frames: list[str], video_path: str) -> float:
     prompt_dir = root_dir / 'MCU_benchmark' / 'auto_eval' / 'prompt'
@@ -142,10 +161,10 @@ def assess_video(task: str, rule_file: str, frames: list[str], video_path: str) 
     )
 
     response = fetch(query)
-    result = save_data_json(response, task, video_path)
+    result = save_data_json(response, task, video_path, grading_rule)
     return result
 
-def save_data_json(response: str, task: str, video_path: str) -> float:
+def save_data_json(response: str, task: str, video_path: str, grading_rule: str = "") -> float:
     result = {}
     keys_to_extract = [  
         "Task Progress",  
@@ -158,23 +177,72 @@ def save_data_json(response: str, task: str, video_path: str) -> float:
 
     result['task'] = task
     result['video_path'] = video_path
-
-    for line in response.strip().split('\n'):  
-        for key in keys_to_extract:  
-            if line.startswith(f'- {key}: '):   
-                value = (line.split(': ', 1)[1].strip()) 
-                
-                if value: 
-                    result[key] = float(value)  
-                    break  
     
-    sum_score = 0
-    num_criteria = 0
+    # Check which criteria are marked as "Not applicable" in the rule file
+    not_applicable_keys = set()
+    if grading_rule:
+        for key in keys_to_extract:
+            # Check if the criterion section contains "Not applicable"
+            if f"**{key}:" in grading_rule:
+                section_start = grading_rule.find(f"**{key}:")
+                section_end = grading_rule.find("\n\n**", section_start)
+                if section_end == -1:
+                    section_end = len(grading_rule)
+                section = grading_rule[section_start:section_end]
+                if "Not applicable" in section or "not applicable" in section:
+                    not_applicable_keys.add(key)
+                    print(f"Excluding '{key}' from scoring (marked as not applicable)")
+    
+    for line in response.strip().split('\n'):
+        for key in keys_to_extract:
+            if line.startswith(f'- {key}: '):
+                try:
+                    value = line.split(': ', 1)[1].strip()
+                    result[key] = float(value)
+                    break
+                except (ValueError, IndexError):
+                    pass
+            elif line.startswith(f'{key}: '):
+                try:
+                    value = line.split(': ', 1)[1].strip()
+                    result[key] = float(value)
+                    break
+                except (ValueError, IndexError):
+                    pass
+    
+    # Validate all scores are within 0-10 range
     for key in keys_to_extract:
         if key in result:
-            num_criteria += 1
-            sum_score += result[key]
-    result['final score'] = sum_score / num_criteria if num_criteria > 0 else 0
+            result[key] = max(0.0, min(10.0, result[key]))
+    
+    # Weighted scoring - Task Progress is most important
+    base_weights = {
+        "Task Progress": 0.40,                    # 40% - Most important
+        "Material Selection and Usage": 0.15,     # 15% - Material usage
+        "Action Control": 0.15,                   # 15% - Action control
+        "Task Completion Efficiency": 0.15,       # 15% - Efficiency
+        "Error Recognition and Correction": 0.10, # 10% - Error correction
+        "Creative Attempts": 0.05                 # 5%  - Bonus
+    }
+    
+    # Remove not applicable criteria from weights
+    weights = {k: v for k, v in base_weights.items() if k not in not_applicable_keys}
+    
+    # Renormalize weights to sum to 1.0
+    weight_sum = sum(weights.values())
+    if weight_sum > 0:
+        weights = {k: v / weight_sum for k, v in weights.items()}
+    
+    weighted_score = 0.0
+    total_weight = 0.0
+    for key in keys_to_extract:
+        if key in result and key in weights:
+            weighted_score += result[key] * weights[key]
+            total_weight += weights[key]
+    
+    result['final score'] = weighted_score / total_weight if total_weight > 0 else 0
+    result['applicable_criteria'] = list(weights.keys())
+    result['excluded_criteria'] = list(not_applicable_keys)
     result['origin response'] = response
     
     output_dir = os.path.dirname(video_path)
