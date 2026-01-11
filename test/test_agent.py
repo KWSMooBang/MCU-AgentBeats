@@ -217,21 +217,21 @@ class TestAgentValidation:
         """Create an Agent instance for testing."""
         return Agent()
     
-    def test_validate_request_valid_simple(self, test_agent):
-        """Test validation with valid simple difficulty request."""
+    def test_validate_request_valid_no_category(self, test_agent):
+        """Test validation with no task_category (all tasks)."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"difficulty": "simple"}
+            config={}
         )
         is_valid, msg = test_agent.validate_request(request)
         assert is_valid is True
         assert msg == "ok"
     
-    def test_validate_request_valid_hard(self, test_agent):
-        """Test validation with valid hard difficulty request."""
+    def test_validate_request_valid_with_category(self, test_agent):
+        """Test validation with specific task_category."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"difficulty": "hard"}
+            config={"task_category": ["combat", "mine"]}
         )
         is_valid, msg = test_agent.validate_request(request)
         assert is_valid is True
@@ -248,40 +248,33 @@ class TestAgentValidation:
         assert "Missing roles" in msg
         assert "agent" in msg
     
-    def test_validate_request_missing_difficulty(self, test_agent):
-        """Test validation with missing difficulty config."""
+    def test_validate_request_with_empty_category(self, test_agent):
+        """Test validation with empty task_category list."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={}
+            config={"task_category": []}
         )
         is_valid, msg = test_agent.validate_request(request)
-        assert is_valid is False
-        assert "Missing config keys" in msg
+        assert is_valid is True
+        assert msg == "ok"
     
-    def test_validate_request_invalid_difficulty(self, test_agent):
-        """Test validation with invalid difficulty value."""
+    def test_validate_request_with_single_category(self, test_agent):
+        """Test validation with single task category."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"difficulty": "medium"}
+            config={"task_category": ["build"]}
         )
         is_valid, msg = test_agent.validate_request(request)
-        assert is_valid is False
-        assert "Invalid difficulty" in msg
-        assert "simple" in msg or "hard" in msg
+        assert is_valid is True
+        assert msg == "ok"
     
-    def test_validate_request_video_eval_with_rule_file(self, test_agent):
-        """Test validation when video eval is properly configured."""
+    def test_validate_request_with_custom_config(self, test_agent):
+        """Test validation with custom configuration."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
             config={
-                "difficulty": "simple",
-                "task_names": [
-                    "look at the sky",
-                    "build a house"
-                ],
-                "num_tasks": 2,
+                "task_category": ["build", "craft"],
                 "max_steps": 2000,
-                "enable_video_eval": True,
             }
         )
         is_valid, msg = test_agent.validate_request(request)
@@ -302,7 +295,7 @@ class TestAgentResponseParsing:
         response = json.dumps({
             "type": "action",
             "buttons": [1, 0, 1, 0, 0],
-            "camera": [0.5, -0.3]
+            "camera": [0, 0]
         })
         action = test_agent._parse_agent_response(response)
         
@@ -311,15 +304,15 @@ class TestAgentResponseParsing:
         assert isinstance(action["buttons"], np.ndarray)
         assert isinstance(action["camera"], np.ndarray)
         assert action["buttons"].dtype == np.int32
-        assert action["camera"].dtype == np.float32
+        assert action["camera"].dtype == np.int32
         np.testing.assert_array_equal(action["buttons"], np.array([1, 0, 1, 0, 0], dtype=np.int32))
-        np.testing.assert_array_almost_equal(action["camera"], np.array([0.5, -0.3], dtype=np.float32))
+        np.testing.assert_array_equal(action["camera"], np.array([0, 0], dtype=np.int32))
     
     def test_parse_agent_response_no_buttons(self, test_agent):
         """Test parsing response with missing buttons."""
         response = json.dumps({
             "type": "action",
-            "camera": [0.1, 0.2]
+            "camera": [0, 0]
         })
         action = test_agent._parse_agent_response(response)
         
@@ -417,7 +410,7 @@ class MockPurpleAgent:
                     self.current_action_index += 1
                 else:
                     # Default action
-                    action_data = {"buttons": [0, 0, 0, 0, 0], "camera": [0.0, 0.0]}
+                    action_data = {"buttons": [0, 0, 0, 0, 0], "camera": [0, 0]}
                 
                 action = ActionPayload(**action_data)
                 return action.model_dump_json()
@@ -482,9 +475,9 @@ class TestAgentPurpleAgentCommunication:
         """Test sequence of observations and actions."""
         # Set up action sequence
         action_sequence = [
-            {"buttons": [1, 0, 0, 0, 0], "camera": [0.1, 0.0]},
-            {"buttons": [0, 1, 0, 0, 0], "camera": [0.0, 0.1]},
-            {"buttons": [0, 0, 1, 0, 0], "camera": [-0.1, 0.0]},
+            {"buttons": [1, 0, 0, 0, 0], "camera": [0, 0]},
+            {"buttons": [0, 1, 0, 0, 0], "camera": [0, 0]},
+            {"buttons": [0, 0, 1, 0, 0], "camera": [0, 0]},
         ]
         mock_purple_agent.set_action_sequence(action_sequence)
         
@@ -512,7 +505,7 @@ class TestAgentPurpleAgentCommunication:
         """Test parsing ActionPayload in agent."""
         action_payload = ActionPayload(
             buttons=[1, 0, 1, 0, 0, 0, 0, 0],
-            camera=[0.5, -0.3]
+            camera=[0, 0]
         )
         
         # Test agent's parse method
@@ -521,15 +514,15 @@ class TestAgentPurpleAgentCommunication:
         assert "buttons" in action
         assert "camera" in action
         np.testing.assert_array_equal(action["buttons"], [1, 0, 1, 0, 0, 0, 0, 0])
-        np.testing.assert_array_almost_equal(action["camera"], [0.5, -0.3])
+        np.testing.assert_array_equal(action["camera"], [0, 0])
     
     @pytest.mark.asyncio
     async def test_full_communication_flow(self, test_agent, mock_purple_agent):
         """Test full communication flow: init -> obs -> action cycle."""
         # Setup mock
         mock_purple_agent.set_action_sequence([
-            {"buttons": [1, 0, 0, 0, 0], "camera": [0.0, 0.0]},
-            {"buttons": [0, 1, 0, 0, 0], "camera": [0.1, 0.0]},
+            {"buttons": [1, 0, 0, 0, 0], "camera": [0, 0]},
+            {"buttons": [0, 1, 0, 0, 0], "camera": [0, 0]},
         ])
         
         # Mock the messenger to use our mock purple agent
@@ -597,7 +590,7 @@ class TestAgentPurpleAgentCommunication:
         # Valid action
         valid_action = ActionPayload(
             buttons=[1, 0, 1],
-            camera=[0.5, 0.3]
+            camera=[0, 0]
         )
         assert valid_action.type == "action"
         assert len(valid_action.buttons) == 3

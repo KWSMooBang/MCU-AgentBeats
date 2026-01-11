@@ -28,10 +28,6 @@ from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from a2a.utils import new_agent_text_message
-from loguru import logger
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("mcu_agent")
 
 from minestudio.models.steve_one import SteveOnePolicy
 from models import InitPayload, ObservationPayload, AckPayload, ActionPayload, ErrorPayload
@@ -73,7 +69,7 @@ class MCUAgentExecutor(AgentExecutor):
         try:
             payload = json.loads(user_input)
         except Exception as e:
-            logger.error(f"Failed to parse user input as JSON: {e}")
+            print(f"Failed to parse user input as JSON: {e}")
             await event_queue.enqueue_event(
                 new_agent_text_message(
                     json.dumps({
@@ -92,7 +88,6 @@ class MCUAgentExecutor(AgentExecutor):
         
         if type == "init":
             text = payload.get("text", "")
-            print("Initializing with text:", text)
             self.condition = self.model.prepare_condition(
                 {
                     'cond_scale': 4.0,
@@ -112,8 +107,6 @@ class MCUAgentExecutor(AgentExecutor):
         elif type == "obs":
             obs = payload.get("obs", None)
             if obs is None:
-                logger.error("No observation provided in 'obs' message.")
-                
                 error_payload = ErrorPayload(message="No observation provided.")
                 await event_queue.enqueue_event(
                     new_agent_text_message(
@@ -150,8 +143,7 @@ class MCUAgentExecutor(AgentExecutor):
             )
             return 
         else: 
-            logger.error(f"Unknown message type: {type}")
-            
+            print(f"Unknown message type received: {type}")
             error_payload = ErrorPayload(message=f"Unknown message type: {type}")
             await event_queue.enqueue_event(
                 new_agent_text_message(
@@ -185,7 +177,7 @@ def main():
     parser.add_argument("--card-url", type=str, help="External URL for the agent card")
     args = parser.parse_args()
 
-    logger.info("Starting mcu agent...")
+    print("Starting mcu purple agent...")
     card = prepare_agent_card(args.card_url or f"http://{args.host}:{args.port}/")
 
     request_handler = DefaultRequestHandler(
