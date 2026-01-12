@@ -12,6 +12,7 @@ class EvalRequest(BaseModel):
 class InitPayload(BaseModel):
     """Initial task description sent to purple agent."""
     type: Literal["init"] = "init"
+    prompt: str = Field(default="", description="System prompt with instructions")
     text: str = Field(..., description="Task description")
 
 class ObservationPayload(BaseModel):

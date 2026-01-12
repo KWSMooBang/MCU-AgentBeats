@@ -44,6 +44,10 @@ class Agent:
         self.messenger = Messenger()
         # Initialize other state here
         self.root_dir = Path(__file__).resolve().parents[1]
+        # Load prompt template
+        prompt_path = self.root_dir / "src" / "prompt.txt"
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            self.prompt_template = f.read()
 
     def validate_request(self, request: EvalRequest) -> tuple[bool, str]:
         missing_roles = set(self.required_roles) - set(request.participants.keys())
@@ -320,8 +324,9 @@ Task Results:
         total_reward = 0.0
         terminated = False
         
-        try:
-            init_payload = InitPayload(text=text)
+        try:            
+            # Send prompt and task description separately
+            init_payload = InitPayload(prompt=self.prompt_template, text=text)
             res = await asyncio.wait_for(
                 self.messenger.talk_to_agent(
                     message=init_payload.model_dump_json(),
