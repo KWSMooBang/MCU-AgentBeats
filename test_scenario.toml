@@ -3,7 +3,7 @@ endpoint = "http://127.0.0.1:9009"
 
 [[participants]]
 role = "agent"
-endpoint = "http://host.docker.internal:9019"
+endpoint = "http://127.0.0.1:9019"
 
 [config]
 task_category = "overall"

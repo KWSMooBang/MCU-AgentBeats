@@ -30,6 +30,7 @@ from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from a2a.utils import new_agent_text_message
 
 from minestudio.models.steve_one import SteveOnePolicy
+from minestudio.models.vpt import VPTPolicy
 from models import InitPayload, ObservationPayload, AckPayload, ActionPayload, ErrorPayload
 
 
@@ -56,9 +57,17 @@ def prepare_agent_card(url: str) -> AgentCard:
     
 class MCUAgentExecutor(AgentExecutor):
     """Executor for the MCU purple agent."""
-    def __init__(self):
-        self.model = SteveOnePolicy.from_pretrained("CraftJarvis/MineStudio_STEVE-1.official").to("cuda")
-        self.model.eval()
+    def __init__(self, model_name: str = "steve1"):
+        self.model_name = model_name
+        if model_name == "steve1":
+            self.model = SteveOnePolicy.from_pretrained("CraftJarvis/MineStudio_STEVE-1.official").to("cuda")
+        elif model_name == "vpt":
+            # Placeholder for VPT model initialization
+            self.model = VPTPolicy.from_pretrained("CraftJarvis/MineStudio_VPT.rl_from_early_game_2x").to("cuda")
+        else:
+            raise ValueError(f"Unsupported model: {model_name}")
+        if self.model is not None:
+            self.model.eval()
         self.ctx_id_to_messages: dict[str, list[dict]] = {}
         
 
@@ -87,15 +96,18 @@ class MCUAgentExecutor(AgentExecutor):
         type = payload.get("type")
         
         if type == "init":
-            text = payload.get("text", "")
-            self.condition = self.model.prepare_condition(
-                {
-                    'cond_scale': 4.0,
-                    'text': text
-                }
-            )
-            self.state_in = self.model.initial_state(1, self.condition)
-            
+            if self.model_name == "vpt":
+                self.state_in = None
+            else:
+                text = payload.get("text", "")
+                self.condition = self.model.prepare_condition(
+                    {
+                        'cond_scale': 4.0,
+                        'text': text
+                    }
+                )
+                self.state_in = self.model.initial_state(1, self.condition)
+                
             ack_payload = AckPayload(success=True, message="Initialization successful.")
             await event_queue.enqueue_event(
                 new_agent_text_message(
@@ -116,25 +128,37 @@ class MCUAgentExecutor(AgentExecutor):
                 )
                 return
             
-            obs_img = self._decode_image(obs)
-            obs = torch.tensor(obs_img, dtype=torch.uint8, device='cuda')
-            if obs.dim() == 3:
-                obs = obs.unsqueeze(0).unsqueeze(0) 
-            elif obs.dim() == 4:
-                obs = obs.unsqueeze(0)
+            img = self._decode_image(obs)
                 
-            action, self.state_in = self.model.get_action(
-                input={
-                    'image': obs,
-                    'condition': self.condition
-                },
-                state_in=self.state_in
-            )
+            if self.model_name == "vpt":
+                img = np.array(img, dtype=np.uint8)
+                action, self.state_in = self.model.get_action(
+                    input={
+                        'image': img,
+                    },
+                    state_in=self.state_in,
+                    input_shape='*'
+                )
+            else: 
+                img = torch.tensor(img, dtype=torch.uint8, device='cuda')
+                if img.ndim == 3:
+                    img = img[None, None, ...] 
+                elif img.ndim == 4:
+                    img = img[None, ...]
+                    
+                action, self.state_in = self.model.get_action(
+                    input={
+                        'image': img,
+                        'condition': self.condition
+                    },
+                    state_in=self.state_in
+                )
             
             action_payload = ActionPayload(
                 buttons=action['buttons'].cpu().numpy().tolist(),
                 camera=action['camera'].cpu().numpy().tolist()
             )
+                
             await event_queue.enqueue_event(
                 new_agent_text_message(
                     action_payload.model_dump_json(),
@@ -175,13 +199,14 @@ def main():
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server")
     parser.add_argument("--port", type=int, default=9019, help="Port to bind the server")
     parser.add_argument("--card-url", type=str, help="External URL for the agent card")
+    parser.add_argument("--model", type=str, default="steve1", choices=["steve1", "vpt"], help="Model to use: steve1 or vpt (default: steve1)")
     args = parser.parse_args()
 
     print("Starting mcu purple agent...")
     card = prepare_agent_card(args.card_url or f"http://{args.host}:{args.port}/")
 
     request_handler = DefaultRequestHandler(
-        agent_executor=MCUAgentExecutor(),
+        agent_executor=MCUAgentExecutor(model_name=args.model),
         task_store=InMemoryTaskStore(),
     )
 
