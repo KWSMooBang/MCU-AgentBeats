@@ -25,6 +25,7 @@ import argparse
 import sys
 import os
 import time
+import torch
 from pathlib import Path
 
 # Path setup - use environment variable or script location
@@ -185,7 +186,7 @@ def run_task(task_name, model_type, num_steps, output_path, fps=20):
             'cond_scale': 4.0,
             'text': task_dict.get('text', task_cfg['name'])
         })
-        state_in = model.initial_state(condition, 1)
+        state_in = model.initial_state(1, condition)
 
     total_reward = 0
     milestones_count = 0
@@ -196,12 +197,26 @@ def run_task(task_name, model_type, num_steps, output_path, fps=20):
         if model_name == 'vpt':
             action, memory = model.get_action(obs, memory, input_shape='*')
         else:  # steve1
-            action, state_in = model.get_steve_action(
-                condition, obs, state_in, input_shape='*'
+            image = obs['image']
+            if image.ndim == 3:
+                image = image[None, None,...] 
+            elif image.ndim == 4:
+                image = image[None,...] 
+            image = torch.tensor(image, dtype=torch.uint8, device='cuda')
+            action, state_in = model.get_action(
+                {
+                    'image': image,
+                    'condition': condition
+                }, 
+                state_in
             )
 
         # Step environment
         obs, reward, done, truncated, info = sim.step(action)
+        if step == 0: 
+            print("Observation and action:")
+            print(f"  Observation: {obs}")
+            print(f"  Action: {action}")
 
         # Track progress
         if reward > 0:
