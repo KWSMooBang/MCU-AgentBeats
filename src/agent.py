@@ -19,7 +19,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from minestudio.simulator import MinecraftSim
-from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback, TaskCallback
+from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback, TaskCallback, FastResetCallback
 from MCU_benchmark.utility.milestone_tracker import MilestoneTrackerCallback
 
 from messenger import Messenger
@@ -139,40 +139,43 @@ class Agent:
                     rule_file_path = os.path.join(criteria_dir, f"{task}.txt")
                     video_path = os.path.join(output_dir, task, "episode_1.mp4")
                     
-                    # Initialize video_score
+                    # Initialize video evaluation results
+                    video_eval_result = None
                     video_score = None
                     
                     # Validate video files
                     if not os.path.exists(video_path):
                         print(f"Warning: Video file not found for {task}")
                         metrics[task]["video_score"] = None
+                        metrics[task]["video_details"] = {}
                     else:
-                        video_score = await self._run_video_eval(
+                        video_eval_result = await self._run_video_eval(
                             task=task,
                             rule_file_path=rule_file_path,
                             video_path=video_path
                         )
+                        video_score = video_eval_result['final_score']
                         metrics[task]["video_score"] = round(video_score, 2)
+                        metrics[task]["video_details"] = video_eval_result['details']
                         
-                    if milestone_reward_cfg:
-                        video_score = round((video_score / 10) * max_score, 2)
-                    
-                    if metrics[task]["video_score"] is None:
-                        metrics[task]["total_score"] = round(sim_score, 2)
+                    # Evaluate score combination logic
+                    if video_score is None:
+                        # If video evaluation failed, use only simulator score
+                        metrics[task]["score"] = round(sim_score, 2)
                     else:
                         if reward_cfg or milestone_reward_cfg:
-                            if sim_score > 0:
-                                metrics[task]["total_score"] = round((sim_score + video_score) / 2, 2)
-                            else: 
-                                metrics[task]["total_score"] = 0.0
+                            # Weighted combination: sim_score 70%, video_score 30%
+                            video_scaled = (video_score / 10) * max_score
+                            metrics[task]["score"] = round(sim_score * 0.7 + video_scaled * 0.3, 2)
                         else:
-                            metrics[task]["total_score"] = round(video_score, 2)
+                            # If no reward config, use only video evaluation total score and scale it
+                            metrics[task]["score"] = round((video_score / 10) * max_score, 2)
                         
-                    print(f"Task {task} - sim_score: {sim_score}, video_score: {video_score}, total_score: {metrics[task]['total_score']}")
+                    print(f"Task {task} - score: {metrics[task]['score']}, sim_score: {sim_score}, video_score: {video_score if video_score is not None else 'N/A'}")
                     
-                    if metrics[task].get("total_score") is not None:
+                    if metrics[task].get("score") is not None:
                         result_msg = f"""Task {task} complete
-- Total Score: {metrics[task]['total_score']:.2f} / {max_score}
+- Score: {metrics[task]['score']:.2f} / {max_score}
 - Simulator Score: {sim_score:.2f} / {max_score}
 - Video Score: {video_score if video_score is not None else 'N/A'} / {max_score}"""
                         await updater.update_status(
@@ -181,15 +184,16 @@ class Agent:
                         )
                 except Exception as e:
                     print(f"Error running task {task}: {e}")
-                    metrics[task]["sim_score"] = None
-                    metrics[task]["video_score"] = None
-                    metrics[task]["total_score"] = None
+                    metrics[task]["sim_score"] = 0.0
+                    metrics[task]["video_score"] = 0.0
+                    metrics[task]["video_details"] = {}
+                    metrics[task]["score"] = 0.0
                     metrics[task]["error"] = str(e)
                     metrics[task]["error_type"] = type(e).__name__
         
             # Calculate metrics
-            score_list = [m["total_score"] for m in metrics.values() if m.get("total_score") is not None]
-            total_reward = sum(score_list)
+            score_list = [m["score"] for m in metrics.values() if m.get("score") is not None]
+            total_score = sum(score_list)
             
             # Calculate total possible score
             total_max_score = sum(m.get("max_score", 10.0) for m in metrics.values())
@@ -197,25 +201,24 @@ class Agent:
             result = {
                 "task_category": task_category,
                 "num_tasks": num_tasks,
-                "max_score": total_max_score,
-                "total_score": total_reward,
                 "total_max_score": total_max_score,
+                "total_score": total_score,
                 "task_metrics": metrics
             }
             
             task_result_str = "\n".join(
                 f"""    Task '{task_name}':
         - max_score: {m.get('max_score', 10.0)}
-        - sim_score: {m['sim_score']:.2f} / {m.get('max_score', 10.0)}
-        - video_score: {m['video_score'] / m.get('max_score', 10.0) if m['video_score'] is not None else 'N/A':.2f} / {m.get('max_score', 10.0)}
-        - total_score: {m['total_score']:.2f} / {m.get('max_score', 10.0)}"""
+        - score: {m.get('score', 0.0):.2f} / {m.get('max_score', 10.0)}
+        - sim_score: {m.get('sim_score', 0.0):.2f} / {m.get('max_score', 10.0)}
+        - video_score: {(m.get('video_score', 0.0)):.2f} / 10.0"""
                 for task_name, m in metrics.items() 
             )
             
             summary = f"""MCU Evaluation Result
 Categories: {task_category}
 Number of Tasks: {num_tasks}
-Total Score: {total_reward:.2f} / {total_max_score}
+Total Score: {total_score:.2f} / {total_max_score}
 
 Task Results:
 {task_result_str}"""
@@ -276,25 +279,31 @@ Task Results:
         }
         
         callbacks = [
+            TaskCallback([task_dict]),  
+            FastResetCallback(
+                biomes=['plains', 'forest'],
+                random_tp_range=1000,
+            ),
             RecordCallback(
-                record_path=str(record_path),
+                record_path=record_path,
                 fps=20,
                 frame_type='pov',
-            ),
-            TaskCallback([task_dict]),  # TaskCallback expects a list
-            CommandsCallback(commands),
+            )
         ]
         
         if reward_cfg:
-            callbacks.append(RewardsCallback(reward_cfg=reward_cfg))
-        
+            callbacks.insert(1, RewardsCallback(reward_cfg=reward_cfg))
+            
         if milestone_reward_cfg:
-            callbacks.append(MilestoneTrackerCallback(
+            callbacks.insert(1, MilestoneTrackerCallback(
                 reward_cfg=milestone_reward_cfg,
                 output_path=record_path,
                 task_name=task
             ))
-        
+            
+        if commands:
+            callbacks.insert(0, CommandsCallback(commands))
+            
         env = MinecraftSim(
             obs_size=(128, 128),
             callbacks=callbacks
@@ -352,7 +361,7 @@ Task Results:
                 if terminated:
                     break
         except Exception as e:
-            print(f"Error at step {step}: {e}")
+            print(f"Error: {e}")
         finally:
             if env is not None:
                 try:
@@ -362,14 +371,29 @@ Task Results:
 
         return total_reward
     
-    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> float:
+    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict:
+        """Run video evaluation and return detailed results.
+        
+        Returns:
+            dict: {
+                'final_score': float,
+                'details': dict,
+                'weights': dict,
+                'excluded_criteria': list
+            }
+        """
         try:
             video_frames = process_video(video_path)
-            score = assess_video(task, rule_file_path, video_frames, video_path)
-            return score
+            result = assess_video(task, rule_file_path, video_frames, video_path)
+            return result
         except Exception as e:
             print(f"Video evaluation failed for {task}: {e}")
-            return 0.0
+            return {
+                'final_score': 0.0,
+                'details': {},
+                'weights': {},
+                'excluded_criteria': []
+            }
     
     def _parse_agent_response(self, response: str) -> dict:
         """

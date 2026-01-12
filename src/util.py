@@ -106,7 +106,16 @@ def process_video(video_path: str) -> list[str]:
     print(f"{len(base64Frames)} frames sampled from {total_frames} total frames.")
     return base64Frames
 
-def assess_video(task: str, rule_file: str, frames: list[str], video_path: str) -> float:
+def assess_video(task: str, rule_file: str, frames: list[str], video_path: str) -> dict:
+    """Assess video and return detailed evaluation.
+    
+    Returns:
+        dict: {
+            'final_score': float,
+            'breakdown': dict,  # Individual criterion scores
+            'weights': dict     # Applied weights
+        }
+    """
     prompt_dir = root_dir / 'MCU_benchmark' / 'auto_eval' / 'prompt'
     prompt_file = prompt_dir / 'single_rating_prompt.txt'
     if not prompt_file.exists():
@@ -227,14 +236,22 @@ def save_data_json(response: str, task: str, video_path: str, grading_rule: str 
             weighted_score += result[key] * weights[key]
             total_weight += weights[key]
     
-    result['final score'] = weighted_score / total_weight if total_weight > 0 else 0
+    final_score = weighted_score / total_weight if total_weight > 0 else 0
+    result['final_score'] = final_score
     result['applicable_criteria'] = list(weights.keys())
     result['excluded_criteria'] = list(not_applicable_keys)
-    result['origin response'] = response
+    result['origin_response'] = response
     
     output_dir = os.path.dirname(video_path)
     result_path = os.path.join(output_dir, f"video_eval_result.json")
     with open(result_path, 'w') as f:
         json.dump(result, f, indent=4)
 
-    return result['final score']
+    # Return detailed breakdown for better score combination
+    details = {key: result.get(key, 0.0) for key in keys_to_extract if key in result}
+    return {
+        'final_score': final_score,
+        'details': details,
+        'weights': weights,
+        'excluded_criteria': list(not_applicable_keys)
+    }
