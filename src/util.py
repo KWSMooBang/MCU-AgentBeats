@@ -22,35 +22,22 @@ def extract_info(yaml_content: str, filename: str) -> tuple:
     task = filename[:-5]
     return task, commands, text, reward_cfg, milestone_reward_cfg
 
-def get_tasks(task_category: list[str] = []) -> list[tuple]:
+def get_tasks(task_category: str) -> list[tuple]:
     # Resolve task configs directory relative to this file's project root
-    tasks_dir = root_dir / 'MCU_benchmark' / 'task_configs' / 'tasks'
+    tasks_dir = root_dir / 'MCU_benchmark' / 'task_configs' / 'tasks' / task_category
     if not tasks_dir.exists():
         raise FileNotFoundError(f"Task configs directory not found: {tasks_dir}")
     
-    # If task_category is empty, use all categories except overall
-    if not task_category:
-        categories = [d.name for d in tasks_dir.iterdir() if d.is_dir() and d.name != 'overall']
-    else:
-        categories = task_category
-    
-    # Collect all task files from specified categories
     task_files = []
-    for category in categories:
-        category_dir = tasks_dir / category
-        if not category_dir.exists():
-            print(f"Warning: Category '{category}' not found, skipping.")
-            continue
-        
-        for task_file in category_dir.glob('*.yaml'):
-            task_files.append((category, task_file))
-    
+    for task_file in tasks_dir.glob('*.yaml'):
+        task_files.append(task_file)
+
     # Parse each task file
     tasks = []
-    for category, file_path in task_files:
-        with open(file_path, 'r', encoding='utf-8') as file:
+    for task_file in task_files:
+        with open(task_file, 'r', encoding='utf-8') as file:
             yaml_content = file.read()
-        task, commands, text, reward_cfg, milestone_reward_cfg = extract_info(yaml_content, file_path.name)
+        task, commands, text, reward_cfg, milestone_reward_cfg = extract_info(yaml_content, task_file.name)
         tasks.append((task, commands, text, reward_cfg, milestone_reward_cfg))
     
     return tasks

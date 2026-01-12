@@ -31,7 +31,14 @@ class Agent:
     # Fill in: list of required participant roles, e.g. ["pro_debater", "con_debater"]
     required_roles: list[str] = ["agent"]
     # Fill in: list of required config keys, e.g. ["topic", "num_rounds"]
-    required_config_keys: list[str] = []
+    required_config_keys: list[str] = ["task_category"]
+    
+    # Valid task categories (based on task_configs/tasks folder names)
+    valid_categories: set[str] = {
+        "building", "combat", "crafting", "decoration", "ender_dragon",
+        "mine_diamond_from_scratch", "explore", "find", "long_horizon", "mining_and_collecting",
+        "motion", "overall", "tool_use", "trapping"
+    }
     
     def __init__(self):
         self.messenger = Messenger()
@@ -46,6 +53,11 @@ class Agent:
         missing_config_keys = set(self.required_config_keys) - set(request.config.keys())
         if missing_config_keys:
             return False, f"Missing config keys: {missing_config_keys}"
+
+        # Validate task_category
+        task_category = request.config.get("task_category")
+        if task_category and task_category not in self.valid_categories:
+            return False, f"Invalid task_category: '{task_category}'. Valid categories: {sorted(self.valid_categories)}"
 
         return True, "ok"
 
@@ -74,16 +86,16 @@ class Agent:
         agent_url = str(request.participants["agent"])
         
         # Get config parameters
-        task_category = request.config.get("task_category", [])
+        task_category = request.config.get("task_category", "overall")
+        max_steps = request.config.get("max_steps", None)
         
         # Get tasks
         tasks = get_tasks(task_category)
         num_tasks = len(tasks)
-        category_str = ", ".join(task_category) if task_category else "all categories"
         
         await updater.update_status(
             TaskState.working, 
-            new_agent_text_message(f"Starting MCU evaluation with {num_tasks} tasks from {category_str}")
+            new_agent_text_message(f"Starting MCU evaluation with {num_tasks} tasks from {task_category}")
         )
         
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -100,8 +112,17 @@ class Agent:
                 )
                 
                 metrics[task] = {}
+                # Determine max score for this task
+                if task == "kill_ender_dragon":
+                    max_score = 100.0
+                elif task == "mine_diamond_from_scratch":
+                    max_score = 50.0
+                else:
+                    max_score = 10.0
                 
-                try:
+                metrics[task]["max_score"] = max_score
+                
+                try:        
                     sim_score = await self._run_single_task(
                         agent_url,
                         task, 
@@ -109,6 +130,7 @@ class Agent:
                         text,
                         reward_cfg,
                         milestone_reward_cfg,
+                        max_steps,
                         record_path=os.path.join(output_dir, task)
                     )
                     metrics[task]["sim_score"] = sim_score
@@ -130,39 +152,29 @@ class Agent:
                             rule_file_path=rule_file_path,
                             video_path=video_path
                         )
-                        metrics[task]["video_score"] = video_score
+                        metrics[task]["video_score"] = round(video_score, 2)
                         
-                    # Normalize sim_score to 0-50 scale for long horizon tasks
                     if milestone_reward_cfg:
-                        # Calculate max possible reward from config
-                        max_reward = 0.0
-                        
-                        for cfg in milestone_reward_cfg:
-                            reward = cfg.get('reward', 1.0)
-                            max_times = cfg.get('max_reward_times', 1)
-                            max_reward += reward * max_times
-                        
-                        sim_score = (sim_score / max_reward) * 50 if max_reward > 0 else 0
-                        video_score = (video_score / 10) * 50 if video_score is not None else None
+                        video_score = round((video_score / 10) * max_score, 2)
                     
                     if metrics[task]["video_score"] is None:
-                        metrics[task]["total_score"] = sim_score
+                        metrics[task]["total_score"] = round(sim_score, 2)
                     else:
                         if reward_cfg or milestone_reward_cfg:
                             if sim_score > 0:
-                                metrics[task]["total_score"] = (sim_score + video_score) / 2.0
+                                metrics[task]["total_score"] = round((sim_score + video_score) / 2, 2)
                             else: 
                                 metrics[task]["total_score"] = 0.0
                         else:
-                            metrics[task]["total_score"] = video_score
+                            metrics[task]["total_score"] = round(video_score, 2)
                         
                     print(f"Task {task} - sim_score: {sim_score}, video_score: {video_score}, total_score: {metrics[task]['total_score']}")
                     
                     if metrics[task].get("total_score") is not None:
                         result_msg = f"""Task {task} complete
-- Simulator Score: {metrics[task]['total_score']:.2f} / 10
-- Video Score: {metrics[task]['video_score'] if metrics[task]['video_score'] is not None else 'N/A'} / 10
-- Total Score: {metrics[task]['total_score']:.2f} / 10"""
+- Total Score: {metrics[task]['total_score']:.2f} / {max_score}
+- Simulator Score: {sim_score:.2f} / {max_score}
+- Video Score: {video_score if video_score is not None else 'N/A'} / {max_score}"""
                         await updater.update_status(
                             TaskState.working,
                             new_agent_text_message(result_msg)
@@ -179,25 +191,31 @@ class Agent:
             score_list = [m["total_score"] for m in metrics.values() if m.get("total_score") is not None]
             total_reward = sum(score_list)
             
+            # Calculate total possible score
+            total_max_score = sum(m.get("max_score", 10.0) for m in metrics.values())
+            
             result = {
-                "task_category": task_category if task_category else "all",
+                "task_category": task_category,
                 "num_tasks": num_tasks,
+                "max_score": total_max_score,
                 "total_score": total_reward,
+                "total_max_score": total_max_score,
                 "task_metrics": metrics
             }
             
             task_result_str = "\n".join(
                 f"""    Task '{task_name}':
-        - sim_score: {m['sim_score']}
-        - video_score: {m['video_score']}
-        - total_score: {m['total_score']}"""
+        - max_score: {m.get('max_score', 10.0)}
+        - sim_score: {m['sim_score']:.2f} / {m.get('max_score', 10.0)}
+        - video_score: {m['video_score'] / m.get('max_score', 10.0) if m['video_score'] is not None else 'N/A':.2f} / {m.get('max_score', 10.0)}
+        - total_score: {m['total_score']:.2f} / {m.get('max_score', 10.0)}"""
                 for task_name, m in metrics.items() 
             )
             
             summary = f"""MCU Evaluation Result
-Categories: {category_str}
+Categories: {task_category}
 Number of Tasks: {num_tasks}
-Total Score: {total_reward} / {10 * num_tasks}
+Total Score: {total_reward:.2f} / {total_max_score}
 
 Task Results:
 {task_result_str}"""
@@ -228,13 +246,29 @@ Task Results:
         text: str,
         reward_cfg: list[dict],
         milestone_reward_cfg: list[dict],
+        max_steps: int | None,
         record_path: str
     ) -> float:
         """ 
         Run a single MCU task and return the reward.
         """
         
-        max_steps = 600 if not milestone_reward_cfg else 12000
+        # Determine max_steps based on task and input
+        if max_steps is None:
+            # Default steps based on task type
+            if task == "kill_ender_dragon":
+                max_steps = 12000
+            elif task == "mine_diamond_from_scratch":
+                max_steps = 6000
+            else:
+                max_steps = 600
+        elif max_steps <= 600:
+            # Use the provided max_steps for all tasks
+            max_steps = max_steps
+        else:
+            # max_steps > 600: apply only to long horizon tasks
+            if task not in ["kill_ender_dragon", "mine_diamond_from_scratch"]:
+                max_steps = 600
         
         task_dict = {
             'name': task.replace('_', ' '),
