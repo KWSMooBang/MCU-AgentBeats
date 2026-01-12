@@ -12,12 +12,12 @@ reward_cfg:
   objects:
   - white_carpet
   - red_carpet
-  reward: 0.25
-  max_reward_times: 20
+  reward: 0.5
+  max_reward_times: 10
 - event: use_item
   identity: place_carpet
   objects:
   - white_carpet
   - red_carpet
-  reward: 0.25
-  max_reward_times: 20
+  reward: 0.5
+  max_reward_times: 10

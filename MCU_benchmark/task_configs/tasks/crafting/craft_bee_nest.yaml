@@ -10,8 +10,8 @@ thinking: '- In order to craft a bee nest, you need to gather honeycomb and wood
   can create a similar structure using the materials.'
 reward_cfg:
 - event: craft_item
-  identity: craft_bee_nest
+  identity: craft_beehive
   objects:
-  - bee_nest
+  - beehive
   reward: 10.0
   max_reward_times: 1

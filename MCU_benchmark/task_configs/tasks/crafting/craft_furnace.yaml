@@ -6,11 +6,9 @@ defaults:
 - _self_
 text: Craft a furnace for smelting items.
 reward_cfg:
-- event: pickup_item
-  identity: get_smelted_item
+- event: craft_item
+  identity: craft_furnace
   objects:
-  - iron_ingot
-  - cooked_beef
-  - glass
+  - furnace
   reward: 10.0
   max_reward_times: 1

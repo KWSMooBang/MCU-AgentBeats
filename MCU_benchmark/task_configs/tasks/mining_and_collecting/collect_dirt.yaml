@@ -6,9 +6,9 @@ defaults:
 - _self_
 text: Collect dirt blocks from the ground.
 reward_cfg:
-- event: mine_block
+- event: pick
   identity: collect_dirt
   objects:
   - dirt
-  reward: 0.2
-  max_reward_times: 30
+  reward: 0.5
+  max_reward_times: 20

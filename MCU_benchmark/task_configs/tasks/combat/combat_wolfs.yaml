@@ -19,5 +19,5 @@ reward_cfg:
   identity: kill_wolf
   objects:
   - wolf
-  reward: 10.0
-  max_reward_times: 1
+  reward: 5.0
+  max_reward_times: 2

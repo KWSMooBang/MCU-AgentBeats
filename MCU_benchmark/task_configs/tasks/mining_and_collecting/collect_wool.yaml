@@ -8,9 +8,9 @@ defaults:
 - _self_
 text: Shear sheep to collect wool.
 reward_cfg:
-- event: pickup_item
+- event: pickup
   identity: collect_wool
   objects:
   - wool
-  reward: 0.5
-  max_reward_times: 20
+  reward: 2.0
+  max_reward_times: 5

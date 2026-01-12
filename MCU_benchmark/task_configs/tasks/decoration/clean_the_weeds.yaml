@@ -9,5 +9,5 @@ reward_cfg:
   identity: clean_grass
   objects:
   - tall_grass
-  reward: 1.0
-  max_reward_times: 10
+  reward: 0.5
+  max_reward_times: 20

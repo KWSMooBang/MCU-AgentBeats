@@ -6,11 +6,28 @@ defaults:
 - _self_
 text: Explore and climb a mountain.
 reward_cfg:
+- event: mine_block
+  identity: mine_logs
+  objects:
+  - oak_log
+  - spruce_log
+  - birch_log
+  - jungle_log
+  - acacia_log
+  - dark_oak_log
+  - stripped_oak_log
+  - stripped_spruce_log
+  - stripped_birch_log
+  - stripped_jungle_log
+  - stripped_acacia_log
+  - stripped_dark_oak_log
+  reward: 0.5
+  max_reward_times: 5
 - event: craft_item
   identity: craft_ladder
   objects:
   - ladder
-  reward: 1.0
+  reward: 0.5
   max_reward_times: 5
 - event: use_item
   identity: climb_ladder

@@ -14,5 +14,5 @@ reward_cfg:
   identity: kill_spider
   objects:
   - spider
-  reward: 10.0
-  max_reward_times: 1
+  reward: 5.0
+  max_reward_times: 2

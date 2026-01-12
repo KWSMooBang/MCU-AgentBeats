@@ -12,5 +12,5 @@ reward_cfg:
   identity: kill_phantom
   objects:
   - phantom
-  reward: 2.0
-  max_reward_times: 5
+  reward: 5.0
+  max_reward_times: 2

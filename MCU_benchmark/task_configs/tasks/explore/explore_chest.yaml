@@ -11,5 +11,5 @@ reward_cfg:
   identity: open_chest
   objects:
   - chest
-  reward: 10
-  max_reward_times: 1
+  reward: 5
+  max_reward_times: 2
