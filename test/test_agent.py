@@ -218,20 +218,20 @@ class TestAgentValidation:
         return Agent()
     
     def test_validate_request_valid_no_category(self, test_agent):
-        """Test validation with no task_category (all tasks)."""
+        """Test validation with no task_category - should fail as it's required."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
             config={}
         )
         is_valid, msg = test_agent.validate_request(request)
-        assert is_valid is True
-        assert msg == "ok"
+        assert is_valid is False
+        assert "Missing config keys" in msg
     
     def test_validate_request_valid_with_category(self, test_agent):
         """Test validation with specific task_category."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"task_category": ["combat", "mine"]}
+            config={"task_category": "combat"}
         )
         is_valid, msg = test_agent.validate_request(request)
         assert is_valid is True
@@ -248,21 +248,21 @@ class TestAgentValidation:
         assert "Missing roles" in msg
         assert "agent" in msg
     
-    def test_validate_request_with_empty_category(self, test_agent):
-        """Test validation with empty task_category list."""
+    def test_validate_request_with_invalid_category(self, test_agent):
+        """Test validation with invalid task_category."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"task_category": []}
+            config={"task_category": "invalid_category"}
         )
         is_valid, msg = test_agent.validate_request(request)
-        assert is_valid is True
-        assert msg == "ok"
+        assert is_valid is False
+        assert "Invalid task_category" in msg
     
-    def test_validate_request_with_single_category(self, test_agent):
-        """Test validation with single task category."""
+    def test_validate_request_with_valid_category(self, test_agent):
+        """Test validation with valid task category."""
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
-            config={"task_category": ["build"]}
+            config={"task_category": "building"}
         )
         is_valid, msg = test_agent.validate_request(request)
         assert is_valid is True
@@ -273,7 +273,7 @@ class TestAgentValidation:
         request = EvalRequest(
             participants={"agent": "http://localhost:9019"},
             config={
-                "task_category": ["build", "craft"],
+                "task_category": "crafting",
                 "max_steps": 2000,
             }
         )

@@ -6,4 +6,4 @@ role = "agent"
 endpoint = "http://host.docker.internal:9019"
 
 [config]
-task_category = ["motion"]
+task_category = "overall"
