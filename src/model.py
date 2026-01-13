@@ -19,7 +19,7 @@ class ObservationPayload(BaseModel):
     """Observation sent to purple agent at each step."""
     type: Literal["obs"] = "obs"
     step: int = Field(..., ge=0, description="Current step number")
-    image: str = Field(..., description="Base64 encoded image")
+    obs: str = Field(..., description="Base64 encoded image")
 
 # From Purple Agent to Green Agent
 class AckPayload(BaseModel):

@@ -30,7 +30,7 @@ class AckPayload(BaseModel):
     success: bool = False
     message: str = ""
 
-
+class ActionPayload(BaseModel):
     """Action response from purple agent.
     
     Supports three formats:

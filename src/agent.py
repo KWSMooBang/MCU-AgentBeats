@@ -347,7 +347,7 @@ Task Results:
                 obs_img = obs['image']
                 obs_payload = ObservationPayload(
                     step=step,
-                    image=encode_image(obs_img)
+                    obs=encode_image(obs_img)
                 )
                 
                 # Receive action from purple agent
@@ -360,7 +360,7 @@ Task Results:
                         ),
                         timeout=30.0
                     )
-                    action = self._parse_agent_response(env, response)
+                    action = self._parse_action_response(env, response)
                 except asyncio.TimeoutError:
                     print(f"Agent timeout at step {step}, using noop action")
                     action = self.noop_action
