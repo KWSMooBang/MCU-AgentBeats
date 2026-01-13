@@ -31,7 +31,7 @@ from a2a.utils import new_agent_text_message
 
 from minestudio.models.steve_one import SteveOnePolicy
 from minestudio.models.vpt import VPTPolicy
-from models import InitPayload, ObservationPayload, AckPayload, ActionPayload, ErrorPayload
+from models import InitPayload, ObservationPayload, AckPayload, ActionPayload
 
 
 def prepare_agent_card(url: str) -> AgentCard:
@@ -79,12 +79,10 @@ class MCUAgentExecutor(AgentExecutor):
             payload = json.loads(user_input)
         except Exception as e:
             print(f"Failed to parse user input as JSON: {e}")
+            ack_payload = AckPayload(success=False, message="Invalid input format. Please provide a valid JSON.")
             await event_queue.enqueue_event(
                 new_agent_text_message(
-                    json.dumps({
-                        "type": "error",
-                        "message": "Invalid input format. Please provide a valid JSON."
-                    }),
+                    ack_payload.model_dump_json(),
                     context_id=ctx_id,
                 )
             )
@@ -119,10 +117,10 @@ class MCUAgentExecutor(AgentExecutor):
         elif type == "obs":
             obs = payload.get("obs", None)
             if obs is None:
-                error_payload = ErrorPayload(message="No observation provided.")
+                ack_payload = AckPayload(success=False, message="No observation provided.")
                 await event_queue.enqueue_event(
                     new_agent_text_message(
-                        error_payload.model_dump_json(),
+                        ack_payload.model_dump_json(),
                         context_id=ctx_id,
                     )
                 )
@@ -168,10 +166,10 @@ class MCUAgentExecutor(AgentExecutor):
             return 
         else: 
             print(f"Unknown message type received: {type}")
-            error_payload = ErrorPayload(message=f"Unknown message type: {type}")
+            ack_payload = AckPayload(success=False, message=f"Unknown message type: {type}")
             await event_queue.enqueue_event(
                 new_agent_text_message(
-                    error_payload.model_dump_json(),
+                    ack_payload.model_dump_json(),
                     context_id=ctx_id,
                 )
             )

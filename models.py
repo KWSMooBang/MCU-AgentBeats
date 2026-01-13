@@ -103,7 +103,3 @@ class ActionPayload(BaseModel):
         
         return self
     
-class ErrorPayload(BaseModel):
-    """Error message from purple agent."""
-    type: Literal["error"] = "error"
-    message: str = Field(..., description="Error message")

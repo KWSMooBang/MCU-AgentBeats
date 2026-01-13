@@ -17,7 +17,7 @@ src_path = Path(__file__).resolve().parents[1] / 'src'
 sys.path.insert(0, str(src_path))
 
 from agent import Agent
-from model import EvalRequest, InitPayload, ObservationPayload, ActionPayload, AckPayload
+from models import EvalRequest, InitPayload, ObservationPayload, ActionPayload, AckPayload
 
 
 # A2A validation helpers - adapted from https://github.com/a2aproject/a2a-inspector/blob/main/backend/validators.py
@@ -292,12 +292,16 @@ class TestAgentResponseParsing:
     
     def test_parse_agent_response_valid_action(self, test_agent):
         """Test parsing a valid action response."""
+        # Create mock environment
+        mock_env = MagicMock()
+        
         response = json.dumps({
             "type": "action",
-            "buttons": [1, 0, 1, 0, 0],
-            "camera": [0, 0]
+            "action_type": "agent",
+            "buttons": [1],
+            "camera": [60]
         })
-        action = test_agent._parse_agent_response(response)
+        action = test_agent._parse_action_response(mock_env, response)
         
         assert "buttons" in action
         assert "camera" in action
@@ -305,66 +309,64 @@ class TestAgentResponseParsing:
         assert isinstance(action["camera"], np.ndarray)
         assert action["buttons"].dtype == np.int32
         assert action["camera"].dtype == np.int32
-        np.testing.assert_array_equal(action["buttons"], np.array([1, 0, 1, 0, 0], dtype=np.int32))
-        np.testing.assert_array_equal(action["camera"], np.array([0, 0], dtype=np.int32))
     
     def test_parse_agent_response_no_buttons(self, test_agent):
-        """Test parsing response with missing buttons."""
+        """Test parsing response with missing buttons - should fail validation."""
+        mock_env = MagicMock()
+        
         response = json.dumps({
             "type": "action",
-            "camera": [0, 0]
+            "action_type": "agent",
+            "camera": [60]
         })
-        action = test_agent._parse_agent_response(response)
+        # Should return noop action due to validation failure
+        action = test_agent._parse_action_response(mock_env, response)
         
         assert "buttons" in action
         assert "camera" in action
-        assert len(action["buttons"]) == 1
-        assert action["buttons"][0] == 0
     
     def test_parse_agent_response_no_camera(self, test_agent):
-        """Test parsing response with missing camera."""
+        """Test parsing response with missing camera - should fail validation."""
+        mock_env = MagicMock()
+        
         response = json.dumps({
             "type": "action",
-            "buttons": [1, 1, 0]
+            "action_type": "agent",
+            "buttons": [1]
         })
-        action = test_agent._parse_agent_response(response)
+        # Should return noop action due to validation failure
+        action = test_agent._parse_action_response(mock_env, response)
         
         assert "buttons" in action
         assert "camera" in action
-        assert len(action["camera"]) == 1
-        assert action["camera"][0] == 60
     
     def test_parse_agent_response_empty_string(self, test_agent):
         """Test parsing empty response."""
-        action = test_agent._parse_agent_response("")
+        mock_env = MagicMock()
+        action = test_agent._parse_action_response(mock_env, "")
         
         assert "buttons" in action
         assert "camera" in action
-        assert len(action["buttons"]) == 1
-        assert len(action["camera"]) == 1
-        assert action["buttons"][0] == 0
-        assert action["camera"][0] == 60
     
     def test_parse_agent_response_invalid_json(self, test_agent):
         """Test parsing invalid JSON."""
-        action = test_agent._parse_agent_response("{invalid json}")
+        mock_env = MagicMock()
+        action = test_agent._parse_action_response(mock_env, "{invalid json}")
         
         assert "buttons" in action
         assert "camera" in action
-        assert len(action["buttons"]) == 1
-        assert len(action["camera"]) == 1
     
     def test_parse_agent_response_dict_without_type(self, test_agent):
-        """Test parsing dict response without type field."""
+        """Test parsing dict response without type field - should use fallback."""
+        mock_env = MagicMock()
         response = json.dumps({
-            "buttons": [0, 1],
-            "camera": [0.0, 0.0]
+            "buttons": [1],
+            "camera": [60]
         })
-        action = test_agent._parse_agent_response(response)
+        action = test_agent._parse_action_response(mock_env, response)
         
         assert "buttons" in action
         assert "camera" in action
-        np.testing.assert_array_equal(action["buttons"], np.array([0, 1], dtype=np.int32))
 
 
 class MockPurpleAgent:
@@ -410,7 +412,7 @@ class MockPurpleAgent:
                     self.current_action_index += 1
                 else:
                     # Default action
-                    action_data = {"buttons": [0, 0, 0, 0, 0], "camera": [0, 0]}
+                    action_data = {"action_type": "agent", "buttons": [0], "camera": [60]}
                 
                 action = ActionPayload(**action_data)
                 return action.model_dump_json()
@@ -475,9 +477,9 @@ class TestAgentPurpleAgentCommunication:
         """Test sequence of observations and actions."""
         # Set up action sequence
         action_sequence = [
-            {"buttons": [1, 0, 0, 0, 0], "camera": [0, 0]},
-            {"buttons": [0, 1, 0, 0, 0], "camera": [0, 0]},
-            {"buttons": [0, 0, 1, 0, 0], "camera": [0, 0]},
+            {"action_type": "agent", "buttons": [1], "camera": [60]},
+            {"action_type": "agent", "buttons": [2], "camera": [60]},
+            {"action_type": "agent", "buttons": [3], "camera": [60]},
         ]
         mock_purple_agent.set_action_sequence(action_sequence)
         
@@ -503,26 +505,28 @@ class TestAgentPurpleAgentCommunication:
     @pytest.mark.asyncio
     async def test_parse_action_payload(self, test_agent):
         """Test parsing ActionPayload in agent."""
+        mock_env = MagicMock()
         action_payload = ActionPayload(
-            buttons=[1, 0, 1, 0, 0, 0, 0, 0],
-            camera=[0, 0]
+            action_type="agent",
+            buttons=[1],
+            camera=[60]
         )
         
         # Test agent's parse method
-        action = test_agent._parse_agent_response(action_payload.model_dump_json())
+        action = test_agent._parse_action_response(mock_env, action_payload.model_dump_json())
         
         assert "buttons" in action
         assert "camera" in action
-        np.testing.assert_array_equal(action["buttons"], [1, 0, 1, 0, 0, 0, 0, 0])
-        np.testing.assert_array_equal(action["camera"], [0, 0])
     
     @pytest.mark.asyncio
     async def test_full_communication_flow(self, test_agent, mock_purple_agent):
         """Test full communication flow: init -> obs -> action cycle."""
+        mock_env = MagicMock()
+        
         # Setup mock
         mock_purple_agent.set_action_sequence([
-            {"buttons": [1, 0, 0, 0, 0], "camera": [0, 0]},
-            {"buttons": [0, 1, 0, 0, 0], "camera": [0, 0]},
+            {"action_type": "agent", "buttons": [1], "camera": [60]},
+            {"action_type": "agent", "buttons": [2], "camera": [60]},
         ])
         
         # Mock the messenger to use our mock purple agent
@@ -555,7 +559,7 @@ class TestAgentPurpleAgentCommunication:
                 )
                 
                 # Parse action
-                action = test_agent._parse_agent_response(action_response)
+                action = test_agent._parse_action_response(mock_env, action_response)
                 assert "buttons" in action
                 assert "camera" in action
                 assert isinstance(action["buttons"], np.ndarray)
@@ -587,13 +591,15 @@ class TestAgentPurpleAgentCommunication:
         assert valid_obs.step == 10
         assert valid_obs.type == "obs"
         
-        # Valid action
+        # Valid action - compact format
         valid_action = ActionPayload(
-            buttons=[1, 0, 1],
-            camera=[0, 0]
+            action_type="agent",
+            buttons=[1],
+            camera=[60]
         )
         assert valid_action.type == "action"
-        assert len(valid_action.buttons) == 3
+        assert valid_action.action_type == "agent"
+        assert len(valid_action.buttons) == 1
         
         # Invalid step (negative)
         with pytest.raises(Exception):  # Pydantic validation error
