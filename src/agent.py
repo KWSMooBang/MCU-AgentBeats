@@ -19,6 +19,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from minestudio.simulator import MinecraftSim
+from minestudio.utils.vpt_lib.actions import Buttons
 from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback, TaskCallback, FastResetCallback
 from MCU_benchmark.utility.milestone_tracker import MilestoneTrackerCallback
 
@@ -38,6 +39,16 @@ class Agent:
         "building", "combat", "crafting", "decoration", "ender_dragon",
         "mine_diamond_from_scratch", "explore", "find", "long_horizon", "mining_and_collecting",
         "motion", "overall", "tool_use", "trapping"
+    }
+    
+    # Task step limits
+    DEFAULT_MAX_STEPS: int = 1200
+    LONG_TASK_MAX_STEPS: int = 12000
+    LONG_TASKS: set[str] = {"kill_ender_dragon", "mine_diamond_from_scratch"}
+    
+    noop_action: dict = {
+        "buttons": np.array([0]),
+        "camera": np.array([60]),
     }
     
     def __init__(self):
@@ -102,6 +113,7 @@ class Agent:
             new_agent_text_message(f"Starting MCU evaluation with {num_tasks} tasks from {task_category}")
         )
         
+        # Prepare output directory
         date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = self.root_dir / "output" / date_str
         os.makedirs(output_dir, exist_ok=True)
@@ -116,6 +128,7 @@ class Agent:
                 )
                 
                 metrics[task] = {}
+                
                 # Determine max score for this task
                 if task == "kill_ender_dragon":
                     max_score = 100.0
@@ -123,7 +136,6 @@ class Agent:
                     max_score = 50.0
                 else:
                     max_score = 10.0
-                
                 metrics[task]["max_score"] = max_score
                 
                 try:        
@@ -249,10 +261,10 @@ Task Results:
         self,
         agent_url: str,
         task: str,
-        commands: list[str],
+        commands: list[str] | None,
         text: str,
-        reward_cfg: list[dict],
-        milestone_reward_cfg: list[dict],
+        reward_cfg: list[dict] | None,
+        milestone_reward_cfg: list[dict] | None,
         max_steps: int | None,
         record_path: str
     ) -> float:
@@ -262,21 +274,11 @@ Task Results:
         
         # Determine max_steps based on task and input
         if max_steps is None:
-            # Default steps based on task type
-            if task == "kill_ender_dragon":
-                max_steps = 12000
-            elif task == "mine_diamond_from_scratch":
-                max_steps = 6000
-            else:
-                max_steps = 600
-        elif max_steps <= 600:
-            # Use the provided max_steps for all tasks
-            max_steps = max_steps
-        else:
-            # max_steps > 600: apply only to long horizon tasks
-            if task not in ["kill_ender_dragon", "mine_diamond_from_scratch"]:
-                max_steps = 600
-        
+            max_steps = self.LONG_TASK_MAX_STEPS if task in self.LONG_TASKS else self.DEFAULT_MAX_STEPS
+        elif max_steps > self.DEFAULT_MAX_STEPS and task not in self.LONG_TASKS:
+            max_steps = self.DEFAULT_MAX_STEPS
+         
+        # Set up the MinecraftSim environment with appropriate callbacks
         task_dict = {
             'name': task.replace('_', ' '),
             'text': text
@@ -321,60 +323,64 @@ Task Results:
             enc_image = base64.b64encode(buffer).decode("utf-8")
             return enc_image
         
-        total_reward = 0.0
-        terminated = False
-        
+        sim_score = 0.0
         try:            
-            # Send prompt and task description separately
-            init_payload = InitPayload(prompt=self.prompt_template, text=text)
-            res = await asyncio.wait_for(
+            # Send initial payload to purple agent containing prompt and task description
+            init_payload = InitPayload(
+                prompt=self.prompt_template, 
+                text=text
+            )
+            init_response = await asyncio.wait_for(
                 self.messenger.talk_to_agent(
                     message=init_payload.model_dump_json(),
                     url=agent_url,
                     new_conversation=True,
                 ),
-                timeout=60.0
+                timeout=30.0
             )
-            action_payload = AckPayload.model_validate_json(res)
-            assert action_payload.success, f"Agent initialization failed: {action_payload.message}"
+            ack_payload = AckPayload.model_validate_json(init_response)
+            assert ack_payload.success, f"Agent initialization failed: {ack_payload.message}"
             
             obs, info = env.reset()
             for step in range(max_steps):
+                # Send observation payload to purple agent
                 obs_img = obs['image']
-            
                 obs_payload = ObservationPayload(
                     step=step,
-                    obs=encode_image(obs_img)
+                    image=encode_image(obs_img)
                 )
                 
+                # Receive action from purple agent
                 try:
-                    res = await asyncio.wait_for(
+                    response = await asyncio.wait_for(
                         self.messenger.talk_to_agent(
                             message=obs_payload.model_dump_json(),
                             url=agent_url,
                             new_conversation=False,
                         ),
-                        timeout=60.0
+                        timeout=30.0
                     )
-                    action = self._parse_agent_response(res)
+                    action = self._parse_agent_response(env, response)
                 except asyncio.TimeoutError:
                     print(f"Agent timeout at step {step}, using noop action")
-                    action = {"buttons": np.array([0]), "camera": np.array([60])}
+                    action = self.noop_action
+                    
+                # Take a step in the environment with the received action
                 obs, reward, terminated, truncated, info = env.step(action)
-                total_reward += reward
+                sim_score += reward
                 
                 if terminated:
                     break
+                
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error during task '{task}': {type(e).__name__} - {e}")
         finally:
-            if env is not None:
-                try:
-                    env.close()
-                except Exception as e:
-                    print(f"Error closing environment: {e}")
+            try:
+                env.close()
+            except (RuntimeError, OSError) as e:
+                print(f"Error closing environment: {type(e).__name__} - {e}")
 
-        return total_reward
+        return sim_score
     
     async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict:
         """Run video evaluation and return detailed results.
@@ -391,8 +397,8 @@ Task Results:
             video_frames = process_video(video_path)
             result = assess_video(task, rule_file_path, video_frames, video_path)
             return result
-        except Exception as e:
-            print(f"Video evaluation failed for {task}: {e}")
+        except (FileNotFoundError, ValueError, RuntimeError) as e:
+            print(f"Video evaluation failed for {task}: {type(e).__name__} - {e}")
             return {
                 'final_score': 0.0,
                 'details': {},
@@ -400,36 +406,84 @@ Task Results:
                 'excluded_criteria': []
             }
     
-    def _parse_agent_response(self, response: str) -> dict:
+    def _parse_agent_action_type(self, env: MinecraftSim, buttons: list, camera: list) -> dict:
+        """Parse agent action type format.
+        
+        Handles two agent formats:
+        1. Compact: buttons=[123], camera=[60] (MultiDiscrete)
+        2. Expanded: buttons=[0,0,0,1,...] (len=20), camera=[0.0, 90.0] (len=2)
         """
-        Parse the purple agent's response string and convert it into an action dict acceptable by `env.step(action)`.
-        """
-
-        if not response:
+        if len(buttons) == 1 and len(camera) == 1:
+            # Format 1: Compact agent format - directly usable by env.step()
             return {
-                "buttons": np.array([0]),
-                "camera": np.array([60]),
+                "buttons": np.array(buttons, dtype=np.int32),
+                "camera": np.array(camera, dtype=np.int32)
             }
-
+        elif len(buttons) == 20 and len(camera) == 2:
+            # Format 2: Expanded agent format - convert to compact format
+            # This is NOT env format, so we don't call env_action_to_agent_action
+            # Instead, we need to convert expanded buttons to compact format
+            # For now, convert to env dict first, then to agent format
+            action_dict = {btn: int(buttons[i]) for i, btn in enumerate(Buttons.ALL)}
+            action_dict['camera'] = camera  # Keep as list for env_action_to_agent_action
+            return env.env_action_to_agent_action(action_dict)
+        else:
+            raise ValueError(f"Invalid button/camera dimensions: buttons={len(buttons)}, camera={len(camera)}")
+    
+    def _parse_env_action_type(self, env: MinecraftSim, action_dict: dict) -> dict:
+        """Parse env action type format."""
+        if 'camera' in action_dict:
+            action_dict['camera'] = np.array(action_dict['camera'], dtype=np.float32)
+        return env.env_action_to_agent_action(action_dict)
+    
+    def _fallback_parse_action(self, response: str) -> dict:
+        """Fallback parser for legacy/malformed action responses."""
+        try:
+            data = json.loads(response)
+            buttons = data.get("buttons")
+            camera = data.get("camera")
+            
+            # Parse buttons
+            if buttons is not None and len(buttons) == 1:
+                buttons = np.array(buttons, dtype=np.int32)
+            else:
+                buttons = self.noop_action["buttons"]
+            
+            # Parse camera
+            if camera is not None and len(camera) == 1:
+                camera = np.array(camera, dtype=np.int32)
+            else:
+                camera = self.noop_action["camera"]
+                
+            return {"buttons": buttons, "camera": camera}
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse agent response as JSON: {type(e).__name__} - {e}")
+            return self.noop_action
+    
+    def _parse_action_response(self, env: MinecraftSim, response: str) -> dict:
+        """
+        Parse the purple agent's response string and convert it into an action dict.
+        
+        Supports three formats:
+        1. Compact agent: {"type": "action", "action_type": "agent", "buttons": [123], "camera": [60]}
+        2. Expanded agent: {"type": "action", "action_type": "agent", "buttons": [0,0,0,1,...], "camera": [0.0, 90.0]}
+        3. Env format: {"type": "action", "action_type": "env", "action": {"forward": 1, "camera": [...], ...}}
+        
+        All formats are converted to compact agent format for env.step().
+        """
+        if not response:
+            return self.noop_action
+        
         try:
             action_payload = ActionPayload.model_validate_json(response)
-            buttons = np.array(action_payload.buttons, dtype=np.int32)
-            camera = np.array(action_payload.camera, dtype=np.int32)
-            return {"buttons": buttons, "camera": camera}
-        except Exception as e:
-            print(f"Failed to parse agent response as ActionPayload: {e}")
             
-            try:
-                data = json.loads(response)
-                buttons = data.get("buttons")
-                camera = data.get("camera")
-                
-                buttons = np.array(buttons, dtype=np.int32) if buttons is not None else np.array([0])
-                camera = np.array(camera, dtype=np.int32) if camera is not None else np.array([60])
-                return {"buttons": buttons, "camera": camera}
-            except Exception as e2:
-                print(f"Failed to parse agent response as JSON: {e2}")
-                return {
-                    "buttons": np.array([0]),
-                    "camera": np.array([60]),
-                }
+            if action_payload.action_type == "agent":
+                return self._parse_agent_action_type(env, action_payload.buttons, action_payload.camera)
+            elif action_payload.action_type == "env":
+                return self._parse_env_action_type(env, action_payload.action)
+            else:
+                raise ValueError(f"Unknown action_type: {action_payload.action_type}")
+            
+        except (ValidationError, ValueError, KeyError, json.JSONDecodeError) as e:
+            print(f"Failed to parse as ActionPayload ({type(e).__name__}), trying fallback parsing")
+            return self._fallback_parse_action(response)
