@@ -59,7 +59,11 @@ def fetch(query: list[dict], model: str = 'gpt-4o') -> str:  # gpt4
             completion = client.chat.completions.create(
                 model=model,
                 messages=query,
-                temperature=0.0,
+                temperature=0,
+                top_p=1,
+                seed=42,
+                frequency_penalty=0,
+                presence_penalty=0
             )
             return completion.choices[0].message.content
         except Exception as e:
