@@ -17,7 +17,7 @@ from a2a.types import (
 )
 
 
-DEFAULT_TIMEOUT = 300
+DEFAULT_TIMEOUT = 600
 
 
 def create_message(
