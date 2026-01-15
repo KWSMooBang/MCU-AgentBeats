@@ -10,5 +10,5 @@ reward_cfg:
   identity: throw_snowball
   objects:
   - snowball
-  reward: 2.0
-  max_reward_times: 5
+  reward: 1.0
+  max_reward_times: 1

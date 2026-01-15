@@ -5,7 +5,7 @@ defaults:
 - base
 - _self_
 text: Mine iron ore from the environment.
-reward_cfg:
+milestone_reward_cfg:
 - event: mine_block
   identity: mine_iron_ore
   objects:

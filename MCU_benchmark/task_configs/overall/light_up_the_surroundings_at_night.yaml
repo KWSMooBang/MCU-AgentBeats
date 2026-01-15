@@ -5,7 +5,7 @@ custom_init_commands:
 text: light up the surroundings using torches at night
 thinking: '- In order to light up the surroundings at night, we need torches and set
   the time to night.'
-reward_cfg:
+milestone_reward_cfg:
 - event: use_item
   identity: use_lighting_items
   objects:

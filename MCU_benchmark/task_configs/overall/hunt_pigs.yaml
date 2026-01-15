@@ -6,7 +6,7 @@ custom_init_commands:
 text: hunt pigs with an iron sword
 thinking: '- In order to hunt pigs, we need weapons and have pigs nearby. A suitable
   weapon like an iron sword can swiftly hunt pigs.'
-reward_cfg:
+milestone_reward_cfg:
 - event: kill_entity
   identity: kill_pig
   objects:

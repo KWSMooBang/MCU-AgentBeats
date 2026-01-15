@@ -13,5 +13,5 @@ reward_cfg:
   - dark_oak_log
   - stripped_oak_log
   - stripped_dark_oak_log
-  reward: 0.5
-  max_reward_times: 20
+  reward: 1.0
+  max_reward_times: 10

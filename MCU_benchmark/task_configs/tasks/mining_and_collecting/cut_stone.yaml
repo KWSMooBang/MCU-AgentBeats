@@ -10,5 +10,5 @@ reward_cfg:
   identity: mine_stone
   objects:
   - stone
-  reward: 2.0
+  reward: 1.0
   max_reward_times: 5

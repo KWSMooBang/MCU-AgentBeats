@@ -12,5 +12,5 @@ reward_cfg:
   identity: shoot_arrow
   objects:
   - bow
-  reward: 2.0
-  max_reward_times: 5
+  reward: 1.0
+  max_reward_times: 1

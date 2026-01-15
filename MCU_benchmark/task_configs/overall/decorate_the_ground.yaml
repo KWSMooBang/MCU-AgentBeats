@@ -8,7 +8,7 @@ custom_init_commands:
 text: decorate the ground with colorful items
 thinking: '- In order to decorate the ground, you may need various decorative blocks
   such as carpet, flower pots, and flowers.'
-reward_cfg:
+milestone_reward_cfg:
 - event: use_item
   identity: decorate_ground
   objects:

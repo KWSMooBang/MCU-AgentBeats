@@ -28,7 +28,7 @@ custom_init_commands:
 text: explore the treasure using a map and discover a hidden chest
 thinking: '- In order to explore the treasure, you need a map, a boat, and a pickaxe
   to assist in excavation. Additionally, you''ll need a buried treasure chest nearby.'
-reward_cfg:
+milestone_reward_cfg:
 - event: use_item
   identity: use_map
   objects:

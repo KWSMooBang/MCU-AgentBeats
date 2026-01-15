@@ -30,20 +30,8 @@ thinking: '- In order to explore the treasure, you need a map, a boat, and a pic
   to assist in excavation. Additionally, you''ll need a buried treasure chest nearby.'
 reward_cfg:
 - event: use_item
-  identity: use_map
-  objects:
-  - map
-  reward: 2.5
-  max_reward_times: 1
-- event: use_item
-  identity: use_boat
-  objects:
-  - boat
-  reward: 2.5
-  max_reward_times: 1
-- event: use_item
   identity: open_buried_treasure_chest
   objects:
   - chest
-  reward: 5.0
+  reward: 1.0
   max_reward_times: 1

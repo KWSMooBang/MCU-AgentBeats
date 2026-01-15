@@ -5,7 +5,7 @@ defaults:
 - base
 - _self_
 text: Open your inventory and craft a crafting table using wooden planks.
-reward_cfg:
+milestone_reward_cfg:
 - event: craft_item
   identity: craft_crafting_table
   objects:

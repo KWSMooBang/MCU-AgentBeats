@@ -13,7 +13,7 @@ thinking: '- In order to combat a witch, we need weapons, armor, and a witch nea
   It''s beneficial to have a Diamond Armor Set for protection and a Diamond Sword
   for combat. Witches use potions for attack, so having a shield and some healing
   items like golden apples is helpful.'
-reward_cfg:
+milestone_reward_cfg:
 - event: kill_entity
   identity: kill_witch
   objects:

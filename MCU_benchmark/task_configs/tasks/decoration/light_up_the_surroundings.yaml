@@ -34,5 +34,5 @@ reward_cfg:
   - glowstone
   - lantern
   - sea_lantern
-  reward: 0.5
-  max_reward_times: 20
+  reward: 1.0
+  max_reward_times: 10

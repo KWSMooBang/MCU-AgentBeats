@@ -9,7 +9,7 @@ defaults:
 - base
 - _self_
 text: Craft a cake using ingredients gathered from various sources.
-reward_cfg:
+milestone_reward_cfg:
 - event: craft_item
   identity: craft_cake
   objects:

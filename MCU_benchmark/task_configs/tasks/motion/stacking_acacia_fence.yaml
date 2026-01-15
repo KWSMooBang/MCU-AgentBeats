@@ -4,10 +4,3 @@ custom_init_commands:
 - /summon minecraft:chicken ~3 ~ ~3
 text: stack acacia fences
 thinking: '- In order to stack acacia fences, we need some acacia fences in our inventory.'
-reward_cfg:
-- event: use_item
-  identity: stack_fence
-  objects:
-  - acacia_fence
-  reward: 1.0
-  max_reward_times: 10

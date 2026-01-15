@@ -5,7 +5,7 @@ defaults:
 - base
 - _self_
 text: 'Collect wood from trees in your surroundings.  '
-reward_cfg:
+milestone_reward_cfg:
 - event: pickup
   identity: collect_oak_log
   objects:

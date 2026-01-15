@@ -10,5 +10,5 @@ reward_cfg:
   identity: collect_dirt
   objects:
   - dirt
-  reward: 0.5
-  max_reward_times: 20
+  reward: 1.0
+  max_reward_times: 10
