@@ -3,10 +3,13 @@ Milestone tracking callback for long-term tasks.
 Extends RewardsCallback to save milestone achievement data to JSON.
 
 Date: 2026-01-11
+Updated: 2026-01-14 - Added video clipping for progress evaluation
 '''
 
 import time
 import json
+import cv2
+import numpy as np
 from pathlib import Path
 from minestudio.simulator.callbacks import RewardsCallback
 
@@ -77,6 +80,58 @@ class MilestoneTrackerCallback(RewardsCallback):
         """Save milestone data to JSON before closing."""
         self._save_milestone_json()
 
+    def _clip_video_segment(self, video_path, start_step, end_step, output_path):
+        """
+        Extract a video segment from start_step to end_step.
+
+        Args:
+            video_path: Path to source video
+            start_step: Starting step (frame number)
+            end_step: Ending step (frame number)
+            output_path: Path to save clipped video
+
+        Returns:
+            str: Path to clipped video, or None if clipping failed
+        """
+        try:
+            cap = cv2.VideoCapture(str(video_path))
+            if not cap.isOpened():
+                print(f"Failed to open video: {video_path}")
+                return None
+
+            # Get video properties
+            fps = int(cap.get(cv2.CAP_PROP_FPS))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+            # Create video writer
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
+            # Set starting position
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_step)
+
+            # Read and write frames
+            frame_count = 0
+            frames_to_write = end_step - start_step
+
+            while frame_count < frames_to_write:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                out.write(frame)
+                frame_count += 1
+
+            cap.release()
+            out.release()
+
+            print(f"Video clip saved: {output_path} ({frame_count} frames)")
+            return str(output_path)
+
+        except Exception as e:
+            print(f"Error clipping video: {e}")
+            return None
+
     def _save_milestone_json(self):
         """Save milestone tracking data to JSON file."""
         # Calculate summary statistics
@@ -120,9 +175,47 @@ class MilestoneTrackerCallback(RewardsCallback):
             'milestone_summary': milestone_summary  # Summary view
         }
 
+        # Clip video for current progress evaluation (if incomplete)
+        if milestones_achieved < total_milestones:
+            # Find last completed milestone step
+            last_completed_step = 0
+            current_milestone_cfg = None
+
+            if self.milestone_log:
+                last_completed_step = self.milestone_log[-1]['step']
+
+            # Find next incomplete milestone
+            completed_identities = [m['identity'] for m in self.milestone_log]
+            for cfg in self.reward_cfg:
+                if cfg['identity'] not in completed_identities:
+                    current_milestone_cfg = cfg
+                    break
+
+            # Create video clip if we have a current milestone
+            if current_milestone_cfg:
+                video_path = self.output_path / 'episode_0.mp4'
+                clip_path = self.output_path / 'current_progress_clip.mp4'
+
+                if video_path.exists():
+                    clipped = self._clip_video_segment(
+                        video_path=video_path,
+                        start_step=last_completed_step,
+                        end_step=self.current_step,
+                        output_path=clip_path
+                    )
+
+                    if clipped:
+                        output['current_progress_clip'] = {
+                            'video_path': str(clip_path),
+                            'milestone_target': current_milestone_cfg['identity'],
+                            'milestone_cfg': current_milestone_cfg,
+                            'start_step': last_completed_step,
+                            'end_step': self.current_step
+                        }
+
         # Save to file
         output_file = self.output_path / 'milestone_tracking.json'
         with open(output_file, 'w') as f:
             json.dump(output, f, indent=2)
 
-        print(f"[green]Milestone data saved to: {output_file}[/green]")
+        print(f"Milestone data saved to: {output_file}")
