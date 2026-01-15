@@ -1,26 +1,25 @@
 # MCU Green Agent - AgentBeats Competition
 
-A comprehensive Minecraft-based benchmark evaluation agent for evaluating embodied AI agents' planning, reasoning, and multi-step execution capabilities.
-Green Agent evaluates Purple Agent in complex, open-world environments using the A2A protocol.
+A comprehensive Minecraft-based benchmark evaluation agent for evaluating AI agents' planning, reasoning, and multi-step execution capabilities. Green Agent evaluates Purple Agent in complex, open-world minecraft environments using the A2A protocol.
 
 ## 🎯 Overview
 
-This Green Agent provides a rigorous evaluation framework that goes beyond simple task completion metrics. It evaluates:
+This Green Agent provides a rigorous evaluation for various tasks in minecraft environment that goes beyond simple task completion metrics. It evaluates:
 
-- **Multi-step Planning**: Complex tasks requiring sequential action planning (e.g., crafting requires gathering materials → using crafting table → combining items)
 - **Spatial Reasoning**: Navigation, building, and exploration in 3D space
 - **Tool Use**: Strategic use of items and environmental interactions
 - **Resource Management**: Efficient use of materials and time under constraints
-- **Adaptability**: Handling diverse task types across 10 distinct categories
+- **Adaptability**: Handling diverse task types across various distinct categories
+- **Multi-step Planning**: Complex tasks requiring sequential action planning (e.g., crafting requires gathering materials → using crafting table → combining items)
 
 ### Key Features
 
-✅ **Diverse Tasks** across 10 categories  
-✅ **Nuanced Multi-dimensional Evaluation** (simulation + video-based assessment)  
-✅ **Reproducible & Consistent** results with deterministic task initialization  
-✅ **A2A Protocol Compatible** - works with any compliant agent  
-✅ **Automated + Human-interpretable** scoring  
-✅ **Resource Efficient** - configurable step limits and category selection
+**Diverse Tasks** across 12 categories  
+**Reward-based Evaluation** with simulation tracking and video assessment  
+**Reproducible & Consistent** results with deterministic task initialization  
+**A2A Protocol Compatible** - works with any compliant agent  
+**Automated Scoring** using MCU benchmark reward system  
+**Configurable** - select categories and customize step limits
 
 ## 🚀 Quick Start
 
@@ -84,7 +83,7 @@ The repository includes a sample Purple Agent using STEVE-1 model for testing:
 uv run python test_purple_agent.py --host 0.0.0.0 --port 9019
 
 # When you run green agent server with Docker
-uv run python test_purple_agent.py --card-url "http://host.docker.internal:9019"
+uv run python test_purple_agent.py --host 0.0.0.0 --port 9019 --card-url "http://host.docker.internal:9019"
 ```
 
 ### Step 2: Configure Test Scenario
@@ -97,14 +96,16 @@ endpoint = "http://127.0.0.1:9009"
 
 [[participants]]
 role = "agent"
-endpoint = http://127.0.0.1:9019" or # "http://host.docker.internal:9019" (with Docker)
+endpoint = http://127.0.0.1:9019" 
+or 
+endpoint = "http://host.docker.internal:9019" (with Docker)
 
 [config]
-task_category = ["hunt"]  # Change to desired categories
+task_category = "crafting"  # Change to desired category
 max_steps = 900           # Optional: customize step limit
 ```
 
-**Available categories**: `build`, `craft`, `combat`, `explore`, `mine`, `hunt`, `collect`, `use`, `find`, `misc`
+**Available categories**: `building`, `combat`, `crafting`, `decoration`, `ender_dragon`, `explore`, `find`, `mine_diamond_from_scratch`, `mining_and_collecting`, `motion`, `tool_use`, `trapping`
 
 ### Step 3: Run Evaluation
 
@@ -119,43 +120,49 @@ uv run python test_evaluation.py test_scenario.toml output/results.json
 **Expected Output:**
 ```
 [Status: submitted]
-Starting MCU evaluation with 2 tasks from hunt
+Starting MCU evaluation with 8 tasks from crafting
 
 [Status: working]
-Running task: hunt pigs (category: hunt)
+Running task: craft_furnace 
 
 [Status: working]
-Running task: hunt horses (category: hunt)
+Running task: craft_ladder
 
 [Status: completed]
 MCU Evaluation Result
-Categories: hunt
-Number of Tasks: 2
-Total Score: 15.3
+Category: crafting
+Number of Tasks: 8
+Total Score: 65.4
 
 Task Results:
-Task 'hunt_pigs': 8.1
-Task 'hunt_horses': 7.2
+Task 'craft_furnace': 8.7
+Task 'craft_ladder': 7.9
+Task 'craft_enchanting_table': 8.2
+...
 ```
 
 ## ⚙️ Configuration Parameters
 
 ### Required
 - **participants.agent** (str): URL of the Purple Agent to evaluate
-  - Example: `"http://localhost:8080"` or `"http://purple-agent:8080"`
+  - Example: `"http://green-agent:9009"` or `"http://purple-agent:9019"`
   - Must be A2A protocol compatible
 
 ### Optional
-- **task_category** (list[str]): Task categories to evaluate
-  - Empty list `[]`: All categories except 'overall' (default)
-  - `["craft"]`: Only craft tasks (11 tasks)
-  - `["craft", "build"]`: Craft and build tasks (~23 tasks)
-  - `["combat", "mine", "explore"]`: Combat, mining, exploration
-  - Available categories: `build`, `craft`, `combat`, `explore`, `mine`, `hunt`, `collect`, `use`, `find`, `misc`
+- **task_category** (str): Task category to evaluate
+  - Examples: `"combat"`, `"crafting"`, `"building"`
+  - Available categories: `building`, `combat`, `crafting`, `decoration`, `ender_dragon`, `explore`, `find`, `mine_diamond_from_scratch`, `mining_and_collecting`, `motion`, `tool_use`, `trapping`
 
-- **max_steps** (int): Maximum steps per task (default: 900)
-  - Recommended: 500-1500 depending on task complexity
-  - Lower values test efficiency, higher values allow complex strategies
+- **max_steps** (int): Maximum steps per task
+  - **Default for standard tasks**: 1200 steps
+  - **Default for long-term tasks**: 12000 steps
+    - Long-term tasks categories: `kill_ender_dragon`, `mine_diamond_from_scratch`
+    - These tasks require extensive resource gathering, crafting chains, and exploration
+  - Custom values: Can be set in config, but will be capped at 1200 for non-long-term tasks
+  - Recommended ranges:
+    - Quick tasks (motion, explore): 500-900 steps
+    - Standard tasks (crafting, combat): 900-1500 steps
+    - Long-term tasks: 10000-12000 steps
 
 ## 📁 Project Structure
 
@@ -171,19 +178,19 @@ MCU-AgentBeats/
 │
 ├── MCU_benchmark/
 │   ├── task_configs/
-│   │   ├── tasks/          # Task definitions by category
-│   │   │   ├── build/      # Building tasks
-│   │   │   ├── craft/      # Crafting tasks
-│   │   │   ├── combat/     # Combat tasks
-│   │   │   ├── explore/    # Exploration tasks
-│   │   │   ├── mine/       # Mining tasks
-│   │   │   ├── hunt/       # Hunting tasks
-│   │   │   ├── collect/    # Collection tasks
-│   │   │   ├── use/        # Item usage tasks
-│   │   │   ├── find/       # Finding tasks
-│   │   │   └── misc/       # Miscellaneous tasks
-│   │   ├── simple/         # Legacy simple tasks
-│   │   └── hard/           # Legacy hard tasks
+│   │   └── tasks/          # Task definitions by category
+│   │       ├── building/
+│   │       ├── combat/
+│   │       ├── crafting/
+│   │       ├── decoration/
+│   │       ├── ender_dragon/
+│   │       ├── explore/
+│   │       ├── find/
+│   │       ├── mine_diamond_from_scratch/
+│   │       ├── mining_and_collecting/
+│   │       ├── motion/
+│   │       ├── tool_use/
+│   │       └── trapping/
 │   │
 │   └── auto_eval/
 │       ├── prompt/         # Video evaluation prompts
@@ -201,384 +208,278 @@ MCU-AgentBeats/
 Minecraft provides a rich, open-world environment that closely mirrors real-world agent challenges:
 
 1. **Complex State Space**: Thousands of block types, items, and environmental states
-2. **Long-horizon Tasks**: Require 100s-1000s of steps with intermediate goals
-3. **Emergent Complexity**: Simple actions combine into complex behaviors
-4. **Grounded Multimodal Input**: Visual observation (RGB images) with spatial reasoning
-5. **Diverse Skill Requirements**: Navigation, crafting, combat, exploration, construction
+2. **Emergent Complexity**: Simple actions combine into complex behaviors
+3. **Grounded Multimodal Input**: Visual observation (RGB images) with spatial reasoning
+4. **Diverse Skill Requirements**: Navigation, crafting, combat, exploration, construction
+5. **Long-horizon Tasks**: Require over 12000 steps with intermediate goals
 
-### Task Categories & Progression
+### Task Categories
 
-Our benchmark includes **10 distinct categories**, each testing different capabilities:
+Our benchmark includes **12 distinct categories**, each testing different capabilities:
 
-| Category | Skills Tested | Example Tasks | Difficulty |
-|----------|---------------|---------------|------------|
-| **Craft** | Sequential planning, recipe knowledge | Craft enchanting table, clock | ⭐⭐⭐ |
-| **Build** | Spatial reasoning, multi-step execution | Build house, tower, maze | ⭐⭐⭐ |
-| **Combat** | Real-time decision making, positioning | Combat zombies, skeletons | ⭐⭐ |
-| **Mine** | Navigation, tool use, resource gathering | Mine diamond ore, obsidian | ⭐⭐ |
-| **Explore** | Pathfinding, environment interaction | Explore chest, climb ladder | ⭐⭐ |
-| **Hunt** | Entity tracking, strategic combat | Hunt pigs, horses | ⭐⭐ |
-| **Collect** | Efficient resource gathering | Collect wood, wool, dirt | ⭐ |
-| **Use** | Tool understanding, context-aware actions | Use bow, shield, trident | ⭐⭐ |
-| **Find** | Visual search, navigation | Find diamond, village, bedrock | ⭐⭐⭐ |
-| **Misc** | Creative problem solving, combinations | Trap entities, light surroundings | ⭐⭐⭐ |
+#### Standard Tasks 
 
-### Task Difficulty Progression
+| Category | Skills Tested | Example Tasks |
+|----------|---------------|---------------|
+| **building** | Spatial reasoning, multi-step execution | Build house, tower, maze |
+| **combat** | Real-time decision making, positioning | Combat zombies, skeletons, enderman |
+| **crafting** | Sequential planning, recipe knowledge | Craft enchanting table, furnace, ladder |
+| **decoration** | Creative placement, aesthetic judgment | Decorate wall/ground, lay carpet |
+| **explore** | Pathfinding, environment interaction | Explore chest, boat, climb |
+| **find** | Visual search, navigation | Find diamond, village, bedrock |
+| **mining_and_collecting** | Efficient resource gathering | Collect wood/wool/dirt, mine ores |
+| **motion** | Basic movement and interaction | Drop item, look at sky, stacking |
+| **tool_use** | Tool understanding, context-aware actions | Use bow, shield, brew potion |
+| **trapping** | Strategic planning, entity manipulation | Trap mobs |
 
-- **Level 1 (⭐)**: Single-step or direct actions (collect, drop items)
-- **Level 2 (⭐⭐)**: Multi-step with clear sub-goals (combat, mining)
-- **Level 3 (⭐⭐⭐)**: Complex planning with multiple dependencies (crafting, building)
+#### Long-term Tasks
 
-### Avoiding Trivial Solutions
+| Category | Skills Tested | Example Tasks |
+|----------|---------------|---------------|
+| **ender_dragon** | Advanced combat, long-term planning, resource pipeline | Kill ender dragon |
+| **mine_diamond_from_scratch** | Complete resource gathering → crafting → mining pipeline | Mine diamond from scratch |
 
-Each task is designed to prevent simple heuristics:
-
-- **Randomized Initialization**: Entity positions and initial states vary
-- **Constrained Resources**: Limited materials prevent brute-force approaches
-- **Time Limits**: 900 steps max per task encourages efficiency
-- **Reward Shaping**: Tasks reward optimal strategies, not just completion
+These tasks require extensive multi-stage planning: gathering initial resources → crafting tools → exploring → achieving final goal.
 
 ## 📊 Evaluation Methodology
 
-### Multi-dimensional Scoring
+### Scoring Logic
 
-We use **two complementary evaluation metrics** in original MCU benchmark:
+The evaluation system uses different scoring approaches based on task configuration:
 
-#### 1. Simulation-based Scoring (Automated)
-- **Real-time performance tracking** during task execution
-- **Objective, deterministic** metrics
-- **Efficient** - no human annotation required
+#### 1. Tasks with `reward_cfg` (Standard MCU Benchmark Tasks)
 
-#### 2. Video-based Evaluation (GPT-4 Vision)
-Provides nuanced assessment across **6 dimensions** :
+For tasks with reward configurations (most standard tasks):
 
-| Criterion | Description | Weight |
-|-----------|-------------|--------|
-| **Task Progress** | How far the agent progressed toward the goal | High |
-| **Action Control** | Precision and appropriateness of actions | High |
-| **Error Recognition** | Ability to detect and correct mistakes | Medium |
-| **Creative Attempts** | Novel or intelligent problem-solving strategies | Medium |
-| **Task Efficiency** | Speed and resource optimization | High |
-| **Material Selection** | Correct choice and use of tools/items | Medium |
+1. **Primary Score**: Simulation reward tracking during execution
+   - MineStudio simulator monitors task events (e.g., craft_item, mine_block)
+   - Rewards are accumulated based on achieved milestones
+   - `sim_score = total_rewards_achieved`
 
-**Scoring Range**: 0-10 per criterion, averaged for final score
+2. **Video Enhancement**:
+   - Video evaluation is performed only when `sim_score < max_score`
+   - If sim_score already equals max_score (perfect completion), video evaluation is skipped
+   - GPT-4 Vision analyzes the gameplay video and scores "Task Progress" (0-10)
+   - `final_score = (sim_score + task_progress_score) / 2`
+   - This helps capture partial progress not reflected in discrete reward events
 
-### Why Multi-dimensional Evaluation?
-
-Single metrics (pass/fail) miss important nuances:
-- An agent might complete a task inefficiently (wasted resources)
-- An agent might fail but demonstrate good partial planning
-- An agent might succeed by luck rather than reasoning
-
-Our dual scoring captures both **outcomes and process quality**.
-
-### Scoring Example
-
-```
-Task: Craft Oak Planks
-Agent A: Completes in 50 steps, uses crafting table correctly
-  → Simulation Score: 10.0 (success)
-  → Video Score: 9.2 (efficient, correct tool use)
-
-Agent B: Completes in 500 steps, many failed attempts
-  → Simulation Score: 10.0 (success)
-  → Video Score: 6.5 (inefficient, poor planning)
-
-Agent C: 80% progress, correct approach but ran out of time
-  → Simulation Score: 0.0 (incomplete)
-  → Video Score: 7.8 (good understanding, time management issue)
+**Example:**
+```yaml
+# craft_furnace.yaml
+reward_cfg:
+  - event: craft_item
+    objects: 
+    - furnace
+    reward: 10.0
+    max_reward_times: 1
 ```
 
-## 📈 Evaluation Results
+#### 2. Tasks with `milestone_reward_cfg` (Long-term Tasks)
 
-### Output Directory Structure
+For complex, multi-stage, long horizon tasks (kill_ender_dragon, mine_diamond_from_scratch):
 
-Results are saved in `output/{timestamp}/` directory with complete reproducibility:
+1. **Milestone Tracking**: Task broken into sequential milestones
+2. **Continuous Scoring**: `continuous_score = completed_milestones + current_progress`
+   - `completed_milestones`: Number of fully achieved milestones
+   - `current_progress`: Progress on current incomplete milestone (0-1), evaluated by GPT-4 Vision
+3. **Final Score**: `(continuous_score / total_milestones) * 100`
 
-```
-output/20260111_143000/
-├── result.txt                          # Human-readable summary
-├── craft_oak_planks/
-│   ├── episode_1.mp4                   # Task video recording (30 FPS)
-│   └── video_eval_result.json          # GPT-4 Vision evaluation
-├── build_a_house/
-│   ├── episode_1.mp4
-│   └── video_eval_result.json
-├── combat_zombies/
-│   ├── episode_1.mp4
-│   └── video_eval_result.json
-└── ...
-```
+This provides fine-grained progress measurement for tasks requiring 12,000+ steps.
+
+#### 3. Tasks without Reward Configurations
+
+For tasks without reward_cfg or milestone_reward_cfg:
+
+1. **Video-Only Evaluation**: GPT-4 Vision analyzes recorded gameplay
+2. **Score**: Based solely on "Task Progress" dimension (0-10)
+3. Use case: Tasks where success is subjective or difficult to define programmatically
+
+### Video Evaluation Criteria
+
+When video evaluation is used, GPT-4 Vision assesses gameplay across **6 dimensions**:
+
+| Criterion | Description | Score Range |
+|-----------|-------------|-------------|
+| **Task Progress** | Goal achievement level | 0-10 |
+| **Action Control** | Precision and appropriateness of actions | 0-10 |
+| **Error Recognition** | Detection and correction of mistakes | 0-10 |
+| **Creative Attempts** | Novel problem-solving approaches | 0-10 |
+| **Task Efficiency** | Speed and resource optimization | 0-10 |
+| **Material Selection** | Correctness of tool/item usage | 0-10 |
+
+**Note**: Video evaluation requires OpenAI API key and is used strategically:
+- For long-term tasks: evaluating progress on incomplete milestones
+- For standard tasks: enhancing simulation scores when partial completion is detected
+- For non-reward tasks: primary scoring method
+
+### Scoring Summary
+
+| Task Type | Primary Metric | Video Evaluation Role | Max Score |
+|-----------|---------------|----------------------|-----------|
+| Standard with `reward_cfg` | Simulation rewards | Enhancement when score < max | 10 |
+| Long-term with `milestone_reward_cfg` | Milestone completion + progress | Current milestone progress | 100 |
+| No reward config | Video "Task Progress" | Primary scoring method | 10 |
+
+## 📈 Evaluation Result Example
 
 ### Result Format
 
-**Summary (result.txt):**
-```
-MCU Evaluation Result
-Categories: craft, build
-Number of Tasks: 23
-Total Score: 195.3
+Results are saved in `output/{timestamp}/result.json`:
 
-Task Results:
-Task 'craft_oak_planks': 9.2
-Task 'craft_ladder': 8.7
-Task 'build_a_house': 8.1
-...
-```
-
-**JSON Output:**
 ```json
 {
-  "task_category": ["craft", "build"],
-  "num_tasks": 23,
-  "total_score": 195.3,
+  "task_category": "crafting",
+  "num_tasks": 8,
+  "total_score": 65.4,
+  "total_max_score": 80.0,
+  "action_control": 8.5,
+  "error_recognition_and_correction": 7.8,
+  "creative_attempts": 8.2,
+  "task_completion_efficiency": 8.9,
+  "material_selection_and_usage": 8.1,
   "task_metrics": {
-    "craft_oak_planks": 9.2,
-    "craft_ladder": 8.7,
-    "build_a_house": 8.1,
+    "craft_furnace": {
+      "score": 8.7,
+      "max_score": 10.0,
+      "video_path": "output/20260115_143000/craft_furnace/episode_1.mp4",
+      "video_eval": {
+        "Task Progress": 9.0,
+        "Action Control": 8.5,
+        "Error Recognition and Correction": 8.0,
+        "Creative Attempts": 9.0,
+        "Task Completion Efficiency": 9.5,
+        "Material Selection and Usage": 8.2
+      }
+    },
+    "craft_ladder": {
+      "score": 7.9,
+      "max_score": 10.0,
+      "video_path": "output/20260115_143000/craft_ladder/episode_1.mp4",
+      "video_eval": {
+        "Task Progress": 8.0,
+        "Action Control": 8.0,
+        "Error Recognition and Correction": 7.5,
+        "Creative Attempts": 7.5,
+        "Task Completion Efficiency": 8.5,
+        "Material Selection and Usage": 8.0
+      }
+    }
     ...
   }
 }
 ```
 
-**Individual Task Evaluation (video_eval_result.json):**
-```json
-{
-  "task": "craft_oak_planks",
-  "video_path": "output/.../craft_oak_planks/episode_1.mp4",
-  "Task Progress": 10.0,
-  "Action Control": 9.0,
-  "Error Recognition and Correction": 8.5,
-  "Creative Attempts": 9.0,
-  "Task Completion Efficiency": 9.5,
-  "Material Selection and Usage": 9.2,
-  "final score": 9.2,
-  "origin response": "..."
-}
-```
-
-### Metrics Explanation
-
-- **total_score**: Sum of all video evaluation scores (0-10 per task)
-- **task_metrics**: Individual task scores based on 6-dimensional GPT-4 Vision assessment
-- **video_score**: Averaged score across all evaluation criteria
-- **final score**: Overall benchmark performance (higher is better)
-
-### Performance Benchmarks
-
-| Agent Type | Avg Score | Interpretation |
-|------------|-----------|----------------|
-| 9.0 - 10.0 | Expert | Near-perfect execution, efficient strategies |
-| 7.0 - 8.9 | Proficient | Completes tasks with minor inefficiencies |
-| 5.0 - 6.9 | Competent | Basic task completion, needs optimization |
-| 3.0 - 4.9 | Novice | Partial success, significant errors |
-| 0.0 - 2.9 | Struggling | Minimal progress or task understanding |
-
-## 🔄 Reproducibility
-
-### Deterministic Task Initialization
-
-Every task uses **predefined initialization commands** ensuring:
-- ✅ Identical starting states across runs
-- ✅ Same resources and environment layout
-- ✅ Consistent entity spawning
-- ✅ Reproducible random seeds
-
-### Consistency Guarantees
-
-```yaml
-# Example: craft_oak_planks.yaml
-custom_init_commands:
-  - /give @s minecraft:oak_log 10      # Always 10 logs
-  - /give @s minecraft:crafting_table   # Always 1 table
-  - /give @s minecraft:apple 5          # Always 5 apples
-reward_cfg:
-  - event: craft_item
-    objects: [oak_planks]
-    reward: 10.0                        # Fixed reward
-    max_reward_times: 1                 # Success threshold
-```
-
-### Cross-run Validation
-
-We ensure reproducibility through:
-1. **Fixed step limits** (900 steps per task)
-2. **Deterministic environment** (same Minecraft version, mods)
-3. **Standardized observation** (128x128 RGB images)
-4. **Version-controlled task configs** (all tasks in YAML)
-
-### Easy Integration
-
-Any A2A-compatible agent can run the benchmark:
-- **Standard protocol** - no custom modifications needed
-- **Clear API contract** - well-defined message formats
-- **Docker containerization** - consistent runtime environment
-- **Comprehensive documentation** - setup takes <10 minutes
-
-## 💡 Innovation & Impact
-
-### Original Contributions
-
-1. **First A2A-compatible Minecraft Benchmark**
-   - Extends MCU benchmark with multi-agent evaluation capabilities
-   - Enables distributed agent evaluation at scale
-
-2. **Hybrid Evaluation Methodology**
-   - Combines quantitative (simulation) + qualitative (video) metrics
-   - Goes beyond binary pass/fail to nuanced performance assessment
-
-3. **Task Reward Configuration System**
-   - Flexible reward shaping per task
-   - Supports incremental progress tracking
-   - Configurable success criteria
-
-4. **Category-based Organization**
-   - 10 skill-specific categories vs. flat task list
-   - Enables targeted capability assessment
-   - Supports progressive difficulty testing
-
-### Addressing Evaluation Gaps
-
-| Existing Benchmarks | MCU AgentBeats Green Agent |
-|---------------------|----------------------------|
-| Text-only tasks | **Grounded visual perception** |
-| Single-step actions | **Multi-step planning (100+ steps)** |
-| Static environments | **Dynamic, interactive world** |
-| Binary scoring | **Multi-dimensional evaluation** |
-| Predefined solutions | **Open-ended problem solving** |
-
-### Use Cases & Target Audience
-
-**Research**: Benchmark embodied AI agents in complex environments  
-**Development**: Test agent planning and reasoning capabilities  
-**Competition**: Fair, standardized evaluation for agent competitions  
-**Industry**: Assess AI agents for robotics and autonomous systems
-
-### Complementary to Existing Benchmarks
-
-- **vs. AlfWorld**: MCU adds visual grounding and spatial reasoning
-- **vs. BabyAI**: MCU provides realistic, high-dimensional observations
-- **vs. Habitat**: MCU adds tool use and crafting mechanics
-- **vs. MineDojo**: MCU focuses on structured evaluation vs. open-ended exploration
-
-## 🧪 Testing
-
-### Test Individual Components
-
-```bash
-# Test task loading
-python test_extract_info.py
-
-# Test Purple Agent communication
-python -m pytest test/ -v
-
-# Run specific task
-python MCU_benchmark/run_task.py --task craft_oak_planks
-```
-
-### Integration Test
-
-```bash
-# Start Purple Agent (example)
-cd ../purple-agent && python server.py --port 8080
-
-# Start Green Agent
-python src/server.py --port 9009
-
-# Send test request
-python client.py --agent http://localhost:8080 --category craft
-```
-
 ## 🔧 Purple Agent Requirements
 
-Your Purple Agent must implement the following A2A message handlers:
+Your Purple Agent must implement the following A2A message protocol. For detailed action space documentation, refer to [MineStudio Action Space](https://craftjarvis.github.io/MineStudio/simulator/general-information.html#action-space).
 
-### 1. Initialization
-**Request:**
+### 1. Initialization Message
+
+**Request (InitPayload):**
 ```json
 {
-  "text": "craft oak planks from oak logs"
+  "type": "init",
+  "prompt": "You are an AI agent that can play Minecraft...",
+  "text": "craft furnace from cobblestone"
 }
 ```
-**Response:**
+
+**Response (AckPayload):**
 ```json
 {
+  "type": "ack",
   "success": true,
-  "message": "Ready"
+  "message": "Agent initialized and ready"
 }
 ```
 
-### 2. Observation
-**Request:**
+### 2. Observation Message
+
+**Request (ObservationPayload):**
 ```json
 {
+  "type": "obs",
   "step": 42,
-  "obs": "<base64_encoded_128x128_image>"
+  "obs": "<base64_encoded_128x128_RGB_image>"
 }
 ```
-**Response:**
+
+**Response (ActionPayload):**
+
+The agent supports **three action formats**:
+
+#### Format 1: Compact Agent Format (Recommended)
 ```json
 {
-  "buttons": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  "camera": [0, 60]
+  "type": "action",
+  "action_type": "agent",
+  "buttons": [123],
+  "camera": [60]
+}
+```
+- `buttons`: Single integer (0-8191) encoding all button states as a bitmask
+- `camera`: Single integer (0-120) for discretized camera movement
+
+#### Format 2: Expanded Agent Format
+```json
+{
+  "type": "action",
+  "action_type": "agent",
+  "buttons": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "camera": [0.0, 90.0]
+}
+```
+- `buttons`: 20-element binary array for individual button states
+- `camera`: [yaw, pitch] in degrees
+
+#### Format 3: Environment Format
+```json
+{
+  "type": "action",
+  "action_type": "env",
+  "action": {
+    "forward": 1,
+    "back": 0,
+    "left": 0,
+    "right": 0,
+    "jump": 0,
+    "sneak": 0,
+    "sprint": 0,
+    "attack": 0,
+    "use": 0,
+    "drop": 0,
+    "inventory": 0,
+    "hotbar.1": 0,
+    "hotbar.2": 0,
+    "hotbar.3": 0,
+    "hotbar.4": 0,
+    "hotbar.5": 0,
+    "hotbar.6": 0,
+    "hotbar.7": 0,
+    "hotbar.8": 0,
+    "hotbar.9": 0,
+    "camera": [0.0, 0.0]
+  }
 }
 ```
 
-### Action Space
-- **buttons**: Array of 23 integers (0 or 1)
-  - Forward, Back, Left, Right, Jump, Sneak, Sprint, Attack, Use, etc.
-- **camera**: Array of 2 integers [yaw, pitch]
-  - Range: typically [-180, 180] for yaw, [-90, 90] for pitch
+### Action Space Details
 
-## 🐛 Troubleshooting
+For complete action space specification, see the [MineStudio documentation](https://craftjarvis.github.io/MineStudio/simulator/general-information.html#action-space).
 
-### Common Issues
+**Button Actions:**
+- Movement: `forward`, `back`, `left`, `right`, `jump`, `sneak`, `sprint`
+- Interaction: `attack`, `use`, `drop`, `inventory`
+- Hotbar: `hotbar.1` through `hotbar.9`
 
-**1. Docker credential error**
-```
-ERROR: failed to solve: error getting credentials - err: exec: "docker-credential-desktop.exe"
-```
-**Solution:**
-```bash
-echo '{"auths":{}}' > ~/.docker/config.json
-chmod 444 ~/.docker/config.json
-```
+**Camera Control:**
+- Format: `[yaw, pitch]` or single discretized value
+- Yaw range: -180° to 180° (horizontal rotation)
+- Pitch range: -90° to 90° (vertical rotation)
 
-**2. OpenAI API error**
-```
-ValueError: OPENAI_API_KEY environment variable not set
-```
-**Solution:** Set the environment variable or disable video evaluation
+**Note**: All three formats are automatically parsed and converted by the Green Agent. Choose the format that best suits your agent's architecture.
 
-**3. Task config not found**
-```
-FileNotFoundError: Task configs directory not found
-```
-**Solution:** Ensure you're running from the project root directory
-
-**4. Purple Agent timeout**
-```
-httpx.ReadTimeout: timed out
-```
-**Solution:** Increase timeout or optimize Purple Agent response time
-
-## 📝 Task Configuration
-
-Each task YAML file contains:
-```yaml
-custom_init_commands:
-  - /give @s minecraft:oak_log 10
-  - /give @s minecraft:crafting_table
-text: craft oak planks from oak logs
-reward_cfg:
-  - event: craft_item
-    identity: craft_oak_planks
-    objects: [oak_planks]
-    reward: 10.0
-    max_reward_times: 1
-```
-
-## 🔬 Development
+## 🔬 Benchmark Extension
 
 ### Adding New Tasks
 

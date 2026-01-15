@@ -14,18 +14,19 @@ from a2a.server.tasks import TaskUpdater
 from a2a.types import Message, TaskState, Part, TextPart, DataPart
 from a2a.utils import get_message_text, new_agent_text_message
 
-project_root = Path(__file__).parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
 from minestudio.simulator import MinecraftSim
 from minestudio.utils.vpt_lib.actions import Buttons
 from minestudio.simulator.callbacks import RecordCallback, JudgeResetCallback, CommandsCallback, RewardsCallback, TaskCallback, FastResetCallback
+
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+    
 from MCU_benchmark.utility.milestone_tracker import MilestoneTrackerCallback
 
 from messenger import Messenger
 from model import EvalRequest, InitPayload, ObservationPayload, AckPayload, ActionPayload
-from util import get_tasks, assess_video, process_video
+from util import get_tasks, assess_video, process_video, evaluate_longterm_result
 
 
 class Agent:
@@ -37,8 +38,8 @@ class Agent:
     # Valid task categories (based on task_configs/tasks folder names)
     valid_categories: set[str] = {
         "building", "combat", "crafting", "decoration", "ender_dragon",
-        "mine_diamond_from_scratch", "explore", "find", "long_horizon", "mining_and_collecting",
-        "motion", "overall", "tool_use", "trapping"
+        "mine_diamond_from_scratch", "explore", "find", "mining_and_collecting",
+        "motion", "tool_use", "trapping"
     }
     
     # Task step limits
@@ -75,6 +76,20 @@ class Agent:
             return False, f"Invalid task_category: '{task_category}'. Valid categories: {sorted(self.valid_categories)}"
 
         return True, "ok"
+    
+    def _calculate_task_score(self, reward_cfg, milestone_reward_cfg) -> float:
+        task_score = 0.0
+        
+        # Use milestone_reward_cfg if available, otherwise use reward_cfg
+        cfg = milestone_reward_cfg if milestone_reward_cfg else reward_cfg
+        
+        if cfg:
+            for item in cfg:
+                reward = item.get('reward', 0.0)
+                max_times = item.get('max_reward_times', 1)
+                task_score += reward * max_times
+        
+        return task_score
 
     async def run(self, message: Message, updater: TaskUpdater) -> None:
         """Implement your agent logic here.
@@ -128,17 +143,15 @@ class Agent:
                 )
                 
                 metrics[task] = {}
-                
                 # Determine max score for this task
-                if task == "kill_ender_dragon":
+                if task in self.LONG_TASKS:
                     max_score = 100.0
-                elif task == "mine_diamond_from_scratch":
-                    max_score = 50.0
                 else:
                     max_score = 10.0
                 metrics[task]["max_score"] = max_score
                 
-                try:        
+                try:       
+                    record_path = os.path.join(output_dir, task) 
                     sim_score = await self._run_single_task(
                         agent_url,
                         task, 
@@ -147,78 +160,123 @@ class Agent:
                         reward_cfg,
                         milestone_reward_cfg,
                         max_steps,
-                        record_path=os.path.join(output_dir, task)
+                        record_path=record_path
                     )
                     metrics[task]["sim_score"] = sim_score
                     
                     criteria_dir = self.root_dir / "MCU_benchmark" /"auto_eval" / "criteria_files"
                     rule_file_path = os.path.join(criteria_dir, f"{task}.txt")
-                    video_path = os.path.join(output_dir, task, "episode_1.mp4")
+                    video_path = os.path.join(record_path, "episode_1.mp4")
                     
                     # Initialize video evaluation results
                     video_eval_result = None
-                    video_score = None
                     
                     # Validate video files
                     if not os.path.exists(video_path):
                         print(f"Warning: Video file not found for {task}")
-                        metrics[task]["video_score"] = None
-                        metrics[task]["video_details"] = {}
+                        metrics[task]["video_eval_scores"] = {}
                     else:
                         video_eval_result = await self._run_video_eval(
                             task=task,
                             rule_file_path=rule_file_path,
                             video_path=video_path
                         )
-                        video_score = video_eval_result['final_score']
-                        metrics[task]["video_score"] = round(video_score, 2)
-                        metrics[task]["video_details"] = video_eval_result['details']
                         
-                    # Evaluate score combination logic
-                    if video_score is None:
-                        # If video evaluation failed, use only simulator score
-                        metrics[task]["score"] = round(sim_score, 2)
+                    if reward_cfg is None and milestone_reward_cfg is None:
+                        score = 0.0
+                        if video_eval_result is not None:
+                            scores = video_eval_result.get('scores', {})
+                            score = scores.get('Task Progress', 0.0)
+                        score = (score / 10) * max_score
                     else:
-                        if reward_cfg or milestone_reward_cfg:
-                            # Weighted combination: sim_score 70%, video_score 30%
-                            video_scaled = (video_score / 10) * max_score
-                            metrics[task]["score"] = round(sim_score * 0.7 + video_scaled * 0.3, 2)
-                        else:
-                            # If no reward config, use only video evaluation total score and scale it
-                            metrics[task]["score"] = round((video_score / 10) * max_score, 2)
+                        # Calculate max score from reward configuration
+                        task_score = self._calculate_task_score(reward_cfg, milestone_reward_cfg)
+                        score = sim_score 
                         
-                    print(f"Task {task} - score: {metrics[task]['score']}, sim_score: {sim_score}, video_score: {video_score if video_score is not None else 'N/A'}")
+                        if milestone_reward_cfg is not None:
+                            # Long Horizon Task (kill_ender_dragon, mine_diamond_from_scratch)
+                            score = evaluate_longterm_result(Path(record_path))
+                            score = (score / task_score) * max_score
+                        else: 
+                            # Short Horizon Task with reward_cfg (origin MCU benchmark tasks)
+                            score = (score / task_score) * max_score
+                            
+                            if score < max_score and video_eval_result is not None:
+                                scores = video_eval_result.get('scores', {})
+                                task_progress_score = scores.get('Task Progress', 0.0)
+                                score = (score + task_progress_score) / 2
+                                
+                    metrics[task]["score"] = round(score, 2)  
                     
+                    if video_eval_result is not None:
+                        scores = video_eval_result.get('scores', {})
+                        metrics[task]["action_control"] = scores.get('Action Control', 'N/A')
+                        metrics[task]["error_recognition_and_correction"] = scores.get("Error Recognition and Correction", 'N/A')
+                        metrics[task]["creative_attempts"] = scores.get("Creative Attempts", 'N/A')
+                        metrics[task]["task_completion_efficiency"] = scores.get("Task Completion Efficiency", 'N/A')
+                        metrics[task]["material_selection_and_usage"] = scores.get("Material Selection and Usage", 'N/A')
+                        
+
                     if metrics[task].get("score") is not None:
-                        result_msg = f"""Task {task} complete
-- Score: {metrics[task]['score']:.2f} / {max_score}
-- Simulator Score: {sim_score:.2f} / {max_score}
-- Video Score: {video_score if video_score is not None else 'N/A'} / {max_score}"""
+                        result_msg = f"""Task {task}
+- Max Score: {max_score}
+- Score: {metrics[task]['score']:.2f}
+- Action Control: {metrics[task].get("action_control", "N/A")}
+- Error Recognition: {metrics[task].get("error_recognition_and_correction", "N/A")}
+- Creative Attempts: {metrics[task].get("creative_attempts", "N/A")}
+- Task Efficiency: {metrics[task].get("task_completion_efficiency", "N/A")}
+- Material Usage: {metrics[task].get("material_selection_and_usage", "N/A")} """
+                        print(result_msg)
                         await updater.update_status(
                             TaskState.working,
                             new_agent_text_message(result_msg)
                         )
                 except Exception as e:
                     print(f"Error running task {task}: {e}")
-                    metrics[task]["sim_score"] = 0.0
-                    metrics[task]["video_score"] = 0.0
-                    metrics[task]["video_details"] = {}
                     metrics[task]["score"] = 0.0
+                    metrics[task]["action_control"] = 'N/A'
+                    metrics[task]["error_recognition_and_correction"] = 'N/A'
+                    metrics[task]["creative_attempts"] = 'N/A'
+                    metrics[task]["task_completion_efficiency"] = 'N/A'
+                    metrics[task]["material_selection_and_usage"] = 'N/A'
                     metrics[task]["error"] = str(e)
                     metrics[task]["error_type"] = type(e).__name__
         
             # Calculate metrics
             score_list = [m["score"] for m in metrics.values() if m.get("score") is not None]
             total_score = sum(score_list)
-            
-            # Calculate total possible score
             total_max_score = sum(m.get("max_score", 10.0) for m in metrics.values())
+            
+            # Calculate average scores for video evaluation criteria
+            criteria_scores = {
+                "action_control": [],
+                "error_recognition_and_correction": [],
+                "creative_attempts": [],
+                "task_completion_efficiency": [],
+                "material_selection_and_usage": []
+            }
+            
+            for m in metrics.values():
+                for criterion in criteria_scores.keys():
+                    value = m.get(criterion, 'N/A')
+                    if value != 'N/A' and isinstance(value, (int, float)):
+                        criteria_scores[criterion].append(value)
+            
+            avg_criteria = {
+                criterion: round(sum(scores) / len(scores), 2) if scores else "N/A"
+                for criterion, scores in criteria_scores.items()
+            }
             
             result = {
                 "task_category": task_category,
                 "num_tasks": num_tasks,
                 "total_max_score": total_max_score,
                 "total_score": total_score,
+                "avg_action_control": avg_criteria['action_control'],
+                "avg_error_recognition_and_correction": avg_criteria['error_recognition_and_correction'],
+                "avg_creative_attempts": avg_criteria['creative_attempts'],
+                "avg_task_completion_efficiency": avg_criteria['task_completion_efficiency'],
+                "avg_material_selection_and_usage": avg_criteria['material_selection_and_usage'],
                 "task_metrics": metrics
             }
             
@@ -227,16 +285,25 @@ class Agent:
         - max_score: {m.get('max_score', 10.0)}
         - score: {m.get('score', 0.0):.2f} / {m.get('max_score', 10.0)}
         - sim_score: {m.get('sim_score', 0.0):.2f} / {m.get('max_score', 10.0)}
-        - video_score: {(m.get('video_score', 0.0)):.2f} / 10.0"""
+        - action_control: {m.get('action_control', 'N/A')}
+        - error_recognition: {m.get('error_recognition_and_correction', 'N/A')}
+        - creative_attempts: {m.get('creative_attempts', 'N/A')}
+        - task_efficiency: {m.get('task_completion_efficiency', 'N/A')}
+        - material_usage: {m.get('material_selection_and_usage', 'N/A')}"""
                 for task_name, m in metrics.items() 
             )
             
             summary = f"""MCU Evaluation Result
-Categories: {task_category}
-Number of Tasks: {num_tasks}
-Total Score: {total_score:.2f} / {total_max_score}
+- Categories: {task_category}
+- Number of Tasks: {num_tasks}
+- Total Score: {total_score:.2f} / {total_max_score}
+- Action Control: {avg_criteria['action_control']}
+- Error Recognition and Correction: {avg_criteria['error_recognition_and_correction']}
+- Creative Attempts: {avg_criteria['creative_attempts']}
+- Task Completion Efficiency: {avg_criteria['task_completion_efficiency']}
+- Material Selection and Usage: {avg_criteria['material_selection_and_usage']}
 
-Task Results:
+- Task Results:
 {task_result_str}"""
     
             # Save results to txt file
@@ -253,6 +320,12 @@ Task Results:
             )
             print("========== Evaluation completed. ==========")
             print(summary)
+            
+        except Exception as e:
+            error_msg = f"Critical error during evaluation: {type(e).__name__} - {e}"
+            print(error_msg)
+            await updater.reject(new_agent_text_message(error_msg))
+            raise
         
         finally:
             self.messenger.reset()
@@ -377,20 +450,18 @@ Task Results:
         finally:
             try:
                 env.close()
-            except (RuntimeError, OSError) as e:
+            except Exception as e:
                 print(f"Error closing environment: {type(e).__name__} - {e}")
 
         return sim_score
     
-    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict:
+    async def _run_video_eval(self, task: str, rule_file_path: str, video_path: str) -> dict | None:
         """Run video evaluation and return detailed results.
         
         Returns:
             dict: {
-                'final_score': float,
-                'details': dict,
-                'weights': dict,
-                'excluded_criteria': list
+                'scores': dict
+                'criterias': list
             }
         """
         try:
@@ -399,12 +470,11 @@ Task Results:
             return result
         except (FileNotFoundError, ValueError, RuntimeError) as e:
             print(f"Video evaluation failed for {task}: {type(e).__name__} - {e}")
-            return {
-                'final_score': 0.0,
-                'details': {},
-                'weights': {},
-                'excluded_criteria': []
-            }
+            return None
+        except Exception as e:
+            # Catch OpenAI API errors, network errors, etc.
+            print(f"Unexpected error during video evaluation for {task}: {type(e).__name__} - {e}")
+            return None
     
     def _parse_agent_action_type(self, env: MinecraftSim, buttons: list, camera: list) -> dict:
         """Parse agent action type format.
