@@ -46,7 +46,7 @@ Then, Create a `.env` file in the project root:
 OPENAI_API_KEY=your-openai-api-key-here
 ```
 
-### 3. Run Green Agent Server
+### 2. Run Green Agent Server
 
 #### Running Locally
 ```bash
@@ -328,44 +328,57 @@ Results are saved in `output/{timestamp}/result.json`:
 
 ```json
 {
-  "task_category": "crafting",
-  "num_tasks": 8,
-  "total_score": 65.4,
-  "total_max_score": 80.0,
-  "action_control": 8.5,
-  "error_recognition_and_correction": 7.8,
-  "creative_attempts": 8.2,
-  "task_completion_efficiency": 8.9,
-  "material_selection_and_usage": 8.1,
-  "task_metrics": {
-    "craft_furnace": {
-      "score": 8.7,
-      "max_score": 10.0,
-      "video_path": "output/20260115_143000/craft_furnace/episode_1.mp4",
-      "video_eval": {
-        "Task Progress": 9.0,
-        "Action Control": 8.5,
-        "Error Recognition and Correction": 8.0,
-        "Creative Attempts": 9.0,
-        "Task Completion Efficiency": 9.5,
-        "Material Selection and Usage": 8.2
-      }
-    },
-    "craft_ladder": {
-      "score": 7.9,
-      "max_score": 10.0,
-      "video_path": "output/20260115_143000/craft_ladder/episode_1.mp4",
-      "video_eval": {
-        "Task Progress": 8.0,
-        "Action Control": 8.0,
-        "Error Recognition and Correction": 7.5,
-        "Creative Attempts": 7.5,
-        "Task Completion Efficiency": 8.5,
-        "Material Selection and Usage": 8.0
+  "participants": {
+    "agent": "019bc2e2-b44b-71f3-9fa5-e89901920e31"
+  },
+  "results": [
+    {
+      "task_category": "crafting",
+      "num_tasks": 10,
+      "total_max_score": 100.0,
+      "total_score": 21.5,
+      "avg_action_control": 3.4,
+      "avg_error_recognition_and_correction": 0.9,
+      "avg_creative_attempts": 0.2,
+      "avg_task_completion_efficiency": 1.9,
+      "avg_material_selection_and_usage": 4.3,
+      "task_metrics": {
+        "craft_oak_planks": {
+          "max_score": 10.0,
+          "sim_score": 0.0,
+          "score": 4.0,
+          "action_control": 9.0,
+          "error_recognition_and_correction": 8.0,
+          "creative_attempts": 2.0,
+          "task_completion_efficiency": 8.0,
+          "material_selection_and_usage": 9.0
+        },
+        "craft_the_crafting_table": {
+          "max_score": 10.0,
+          "sim_score": 0.0,
+          "score": 1.5,
+          "action_control": 8.0,
+          "error_recognition_and_correction": 0.0,
+          "creative_attempts": 0.0,
+          "task_completion_efficiency": 0.0,
+          "material_selection_and_usage": 4.0
+        },
+        "craft_diorite": {
+          "max_score": 10.0,
+          "sim_score": 0.0,
+          "score": 2.0,
+          "action_control": 2.0,
+          "error_recognition_and_correction": 0.0,
+          "creative_attempts": 0.0,
+          "task_completion_efficiency": 1.0,
+          "material_selection_and_usage": 3.0
+        },
+      
+        ...
+
       }
     }
-    ...
-  }
+  ]
 }
 ```
 
@@ -383,6 +396,8 @@ Your Purple Agent must implement the following A2A message protocol. For detaile
   "text": "craft furnace from cobblestone"
 }
 ```
+- **prompt**: Basic instruction or context for the agent's role and behavior. Example: "You are an AI agent that can play Minecraft...". This defines the agent's overall style, goals, and constraints, action space, and serves as a decision-making guideline during action inference.
+- **text**: The specific task or command to be performed. Example: "craft furnace from cobblestone". This clearly specifies the goal to be achieved and is a key input for determining the agent's purpose during action inference.
 
 **Response (AckPayload):**
 ```json
@@ -393,7 +408,7 @@ Your Purple Agent must implement the following A2A message protocol. For detaile
 }
 ```
 
-### 2. Observation Message
+### 2. Observation and Action Message
 
 **Request (ObservationPayload):**
 ```json
@@ -403,6 +418,7 @@ Your Purple Agent must implement the following A2A message protocol. For detaile
   "obs": "<base64_encoded_128x128_RGB_image>"
 }
 ```
+- **obs**: The current observation of the environment, typically a base64-encoded RGB image of Minecraft game screen. This allows the agent to perceive the environment and infer the most appropriate action for the current situation.
 
 **Response (ActionPayload):**
 
