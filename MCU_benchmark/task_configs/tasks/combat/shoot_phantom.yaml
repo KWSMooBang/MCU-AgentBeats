@@ -2,7 +2,7 @@ custom_init_commands:
 - /give @p minecraft:bow
 - /give @p minecraft:arrow 16
 - /time set night
-- /execute at @p run summon minecraft:phantom ^2 ^ ^3
+- /execute at @p run summon minecraft:phantom ^2 ^2 ^3
 defaults:
 - base
 - _self_
