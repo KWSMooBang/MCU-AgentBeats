@@ -4,7 +4,7 @@ custom_init_commands:
 - /replaceitem entity @s armor.legs minecraft:diamond_leggings
 - /replaceitem entity @s armor.feet minecraft:diamond_boots
 - /replaceitem entity @s weapon.mainhand minecraft:diamond_sword
-- /summon minecraft:zombie ^-1 ^ ^3
+- /execute at @p run summon minecraft:zombie ^2 ^ ^3
 - /time set night
 defaults:
 - base

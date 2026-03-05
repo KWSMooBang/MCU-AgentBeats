@@ -4,7 +4,7 @@ custom_init_commands:
 - /replaceitem entity @s armor.legs minecraft:diamond_leggings
 - /replaceitem entity @s armor.feet minecraft:diamond_boots
 - /replaceitem entity @s weapon.mainhand minecraft:diamond_sword
-- /summon minecraft:witch ^-1 ^ ^3
+- /execute at @p run summon minecraft:witch ^2 ^ ^3
 - /give @p minecraft:shield
 - /give @p minecraft:golden_apple 5
 - /time set day
