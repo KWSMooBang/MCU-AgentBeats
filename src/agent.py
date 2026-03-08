@@ -431,7 +431,7 @@ class Agent:
                             url=agent_url,
                             new_conversation=False,
                         ),
-                        timeout=30.0
+                        timeout=60.0
                     )
                     action = self._parse_action_response(env, response)
                 except asyncio.TimeoutError:
