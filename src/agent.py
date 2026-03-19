@@ -384,7 +384,7 @@ class Agent:
             callbacks.insert(0, CommandsCallback(commands))
             
         env = MinecraftSim(
-            obs_size=(128, 128),
+            obs_size=(640, 360),
             callbacks=callbacks
         )
         
@@ -409,7 +409,7 @@ class Agent:
                     url=agent_url,
                     new_conversation=True,
                 ),
-                timeout=30.0
+                timeout=60.0
             )
             ack_payload = AckPayload.model_validate_json(init_response)
             assert ack_payload.success, f"Agent initialization failed: {ack_payload.message}"
